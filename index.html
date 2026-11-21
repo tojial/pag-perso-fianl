@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="es" data-universe="rdr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+<title>Aler Presentación • Portafolio PWA</title>
+<meta name="description" content="Portafolio PWA de Aler con estética western inspirada en Red Dead Redemption II." />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#1a1410" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Aler" />
+
+<!-- Manifiesto e íconos de la PWA -->
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+
+<!-- Fuentes tipográficas temáticas (Western RDR2 + Pixel Art Undertale) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Playfair+Display+SC:wght@700;900&display=swap" rel="stylesheet" />
+
+<!-- Iconos Bootstrap y librería DOMPurify para sanitización de HTML -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
+
+<style>
+/* ============================================================
+   1. VARIABLES DE DISEÑO (TOKENS RDR2 + UNDERTALE)
+   ============================================================ */
+:root {
+  /* Paleta Western / Red Dead Redemption 2 */
+  --rdr-bg:        #1a1410;
+  --rdr-paper:     #e8dcc0;
+  --rdr-paper-2:   #d4c4a0;
+  --rdr-leather:   #3b2a1a;
+  --rdr-leather-2: #5a3e28;
+  --rdr-wood:      #6b4a2b;
+  --rdr-gold:      #c9a227;
+  --rdr-red:       #8b1e1e;
+  --rdr-red-2:     #b33a3a;
+  --rdr-ink:       #2b1d12;
+  --rdr-fade:      #8a7a5c;
+
+  /* Paleta Pixel Art / Undertale */
+  --ut-bg:     #000;
+  --ut-white:  #fff;
+  --ut-red:    #ff0000;
+  --ut-yellow: #ffff00;
+  --ut-cyan:   #00ffff;
+
+  /* Tipografías */
+  --font-rdr-title: 'Cinzel', serif;
+  --font-rdr-body:  'EB Garamond', serif;
+  --font-rdr-hand:  'Caveat', cursive;
+  --font-ut:        'Press Start 2P', monospace;
+  --font-ut-body:   'VT323', monospace;
+
+  /* Estados y medidas globales */
+  --success: #22c55e;
+  --danger:  #ef4444;
+  --header-h: 64px;
+  --dock-h:   64px;
+  --radius:   8px;
+}
+
+/* Sobrescritura de colores para el Tema Claro (Mapa rojo RDR2) */
+[data-theme="light"] {
+  --rdr-bg: #650909;
+  --rdr-paper: #f4e8dc;
+  --rdr-paper-2: #dfc9b8;
+  --rdr-leather: #170b0b;
+  --rdr-leather-2: #2a1010;
+  --rdr-wood: #4b1111;
+  --rdr-gold: #c9a27a;
+  --rdr-gold-bright: #f0d4ae;
+  --rdr-red: #e21b1b;
+  --rdr-red-2: #ff3434;
+  --rdr-ink: #fff2e8;
+  --rdr-fade: #c7aaa0;
+}
+
+/* ============================================================
+   2. RESET Y ESTILOS BASE
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-rdr-body);
+  background: var(--rdr-bg);
+  color: var(--rdr-paper);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+
+/* Viñeta atmosférica en toda la pantalla */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.75) 100%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+}
+
+/* ============================================================
+   3. ESTRUCTURA PRINCIPAL (APP SHELL HORIZONTAL)
+   ============================================================ */
+.app-shell {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-rows: var(--header-h) minmax(0, 1fr) var(--dock-h);
+  height: 100dvh;
+  width: min(100%, 1440px); /* Ancho panorámico en escritorio */
+  max-width: 1440px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, rgba(34,24,16,.98), rgba(12,9,7,.99));
+  border-left: 1px solid rgba(215,181,109,.25);
+  border-right: 1px solid rgba(215,181,109,.25);
+  box-shadow: 0 0 60px rgba(0,0,0,.8);
+}
+
+/* Cabecera superior */
+.app-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(1rem, 3vw, 2.5rem);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #4a3220, #24170f);
+  border-bottom: 3px solid #b58a43;
+  box-shadow: 0 4px 12px rgba(0,0,0,.5);
+}
+.header-brand {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .3rem .5rem; border-radius: var(--radius);
+  position: relative;
+  transition: background .2s;
+}
+.header-brand:hover { background: rgba(201,162,39,.1); }
+.header-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 2px solid #d2ad58; object-fit: cover;
+}
+.header-brand-text { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+.header-brand-text strong {
+  font-family: 'Rye', serif; color: var(--rdr-gold);
+  font-size: 1.2rem; letter-spacing: 3px;
+}
+.header-brand-text small { font-size: .68rem; color: var(--rdr-paper-2); letter-spacing: 1px; }
+.header-actions { display: flex; align-items: center; gap: .5rem; }
+
+/* Indicador de conexión (Online / Offline) */
+.net-badge {
+  font-size: .7rem; padding: .28rem .6rem; border-radius: 4px;
+  background: rgba(34,197,94,.15); border: 1px solid var(--success);
+  color: var(--success); white-space: nowrap;
+}
+.net-badge.offline { background: rgba(239,68,68,.15); border-color: var(--danger); color: var(--danger); }
+
+.btn-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 1.05rem;
+  background: rgba(201,162,39,.1); border: 1px solid rgba(201,162,39,.4);
+  transition: all .2s;
+}
+.btn-icon:hover { background: var(--rdr-gold); color: var(--rdr-ink); }
+
+/* Menú lateral desplegable (Drawer) */
+.app-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+  background: var(--rdr-leather); border-right: 2px solid var(--rdr-gold);
+  transform: translateX(-100%); transition: transform .3s ease;
+  z-index: 100; overflow-y: auto; padding: 1rem 0;
+}
+.app-drawer.open { transform: translateX(0); }
+.drawer-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 1rem 1rem; border-bottom: 1px solid rgba(201,162,39,.3);
+}
+.drawer-head strong { font-family: var(--font-rdr-title); color: var(--rdr-gold); letter-spacing: 1px; }
+.drawer-list li { border-bottom: 1px solid rgba(201,162,39,.1); }
+.drawer-list button {
+  display: flex; align-items: center; gap: .6rem;
+  width: 100%; padding: .85rem 1rem; text-align: left;
+  color: var(--rdr-paper); font-size: 1rem;
+  transition: background .2s; position: relative;
+}
+.drawer-list button:hover, .drawer-list button.active {
+  background: rgba(201,162,39,.18);
+  border-left: 3px solid var(--rdr-gold);
+}
+.drawer-list i { color: var(--rdr-gold); font-size: 1.1rem; }
+.drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  z-index: 99; backdrop-filter: blur(2px);
+}
+
+/* Riel flotante derecho de contacto rápido */
+.contact-rail {
+  position: fixed; z-index: 80; right: 0; top: 50%;
+  transform: translate(calc(100% - 34px), -50%);
+  width: min(270px, 82vw); padding: 9px 10px 9px 12px;
+  background: rgba(34,20,29,.97); border: 1px solid rgba(201,162,39,.55);
+  border-right: 0; border-radius: 13px 0 0 13px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.55); transition: transform .28s ease;
+}
+.contact-rail.open { transform: translate(0, -50%); }
+.contact-rail-toggle {
+  position: absolute; left: -34px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 58px; display: grid; place-items: center;
+  border: 1px solid rgba(201,162,39,.55); border-right: 0;
+  border-radius: 10px 0 0 10px; background: #382416; color: var(--rdr-paper);
+  font-size: 1.25rem;
+}
+.contact-rail-list { display: grid; gap: 7px; }
+.contact-rail-link {
+  min-height: 52px; display: grid; grid-template-columns: 36px 1fr; align-items: center; gap: 9px;
+  padding: 6px 9px; border: 1px solid rgba(201,162,39,.28); border-radius: 10px;
+  background: rgba(255,255,255,.045); color: var(--rdr-paper); transition: .2s;
+}
+.contact-rail-link:hover { border-color: var(--rdr-gold); background: rgba(201,162,39,.12); transform: translateX(-2px); }
+.contact-rail-link i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; font-size: 1.15rem; background: #30202a; }
+.contact-rail-link strong { display: block; font: 700 .78rem var(--font-rdr-title); }
+.contact-rail-link small { display: block; color: #d5bd91; font-size: .68rem; }
+.contact-rail-link em { display: block; color: #35df75; font: 700 .62rem var(--font-rdr-body); }
+
+/* Área central donde se inyectan los paneles */
+.app-main {
+  position: relative; overflow: hidden; min-height: 0;
+  padding: clamp(1rem, 2.2vw, 2rem);
+}
+.panel-host { height: 100%; min-height: 0; overflow: hidden; }
+.panel {
+  height: 100%; max-height: 100%;
+  max-width: 1320px; margin: 0 auto;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 0 4px 1.5rem;
+  scrollbar-width: none;
+  animation: fadeIn .35s ease;
+}
+.panel::-webkit-scrollbar { display: none; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Spinner de carga entre vistas */
+.panel-loader {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1rem; height: 100%; color: var(--rdr-fade);
+}
+.spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid rgba(201,162,39,.3); border-top-color: var(--rdr-gold);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Barra inferior de navegación (Dock) */
+.app-dock {
+  display: flex; justify-content: center; align-items: center;
+  gap: clamp(.5rem, 2.5vw, 2.5rem);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 2px, transparent 2px 6px),
+    linear-gradient(0deg, #1a110b, #49301d);
+  border-top: 3px solid #b58a43;
+  padding: 0 1rem;
+}
+.dock-btn {
+  flex: 0 1 150px; height: 100%; display: grid; place-items: center;
+  font-size: 1.4rem; color: var(--rdr-paper-2);
+  position: relative; transition: color .2s, background .2s;
+}
+.dock-btn:hover, .dock-btn.active {
+  background: linear-gradient(180deg, #d7b56d, #8a6a2c);
+  color: #1a120c;
+}
+
+/* Indicador visual de rehidratación */
+[data-hydratable] { position: relative; }
+.hydrate-dot {
+  position: absolute; top: 4px; right: 4px;
+  width: 18px; height: 18px; display: grid; place-items: center;
+  font-size: 9px; border-radius: 50%;
+  background: rgba(201,162,39,.15); border: 1px solid var(--rdr-gold);
+  color: var(--rdr-gold); opacity: .75;
+}
+
+/* ============================================================
+   4. COMPONENTES TEMÁTICOS RDR2 (CARTEL WANTED, TARJETAS, CARRUSEL)
+   ============================================================ */
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem; padding-bottom: .8rem;
+  border-bottom: 1px solid rgba(210,173,88,.45);
+}
+.panel-title { text-align: center; flex: 1; }
+.panel-title i { color: var(--rdr-gold); font-size: 1.5rem; }
+.panel-title h2 {
+  font-family: 'Playfair Display SC', serif; color: var(--rdr-gold);
+  font-size: clamp(1.2rem, 2.5vw, 1.7rem); letter-spacing: 3px; margin-top: .2rem;
+}
+.panel-title small { color: #c1a77c; font-style: italic; }
+
+/* Cartel de Se Busca (Wanted) */
+.wanted-card {
+  background-color: #e7d8b8;
+  background-image:
+    radial-gradient(ellipse at 20% 15%, rgba(255,255,255,.28), transparent 35%),
+    repeating-linear-gradient(3deg, rgba(70,45,20,.025) 0 1px, transparent 1px 4px);
+  border: 10px solid #382416;
+  outline: 1px solid #b58a43;
+  outline-offset: -15px;
+  border-radius: 4px;
+  padding: clamp(1.4rem, 2.8vw, 2.4rem);
+  text-align: center;
+  box-shadow: 0 18px 45px rgba(0,0,0,.55), inset 0 0 55px rgba(75,48,23,.17);
+  position: relative; color: var(--rdr-ink);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.wanted-frame {
+  display: inline-block; padding: 7px; background: #fff;
+  border: 4px double #382416; transform: rotate(-1.5deg);
+  margin: 0 auto .9rem;
+}
+.wanted-photo {
+  width: clamp(135px, 14vw, 185px);
+  height: clamp(135px, 14vw, 185px);
+  object-fit: cover;
+  filter: sepia(.5) contrast(1.12);
+}
+.wanted-stamp {
+  position: absolute; top: 18px; right: 18px;
+  font-family: var(--font-rdr-title); font-weight: 900;
+  color: var(--rdr-red); font-size: clamp(1.1rem, 2.2vw, 1.6rem); letter-spacing: 2px;
+  border: 3px solid var(--rdr-red); padding: 2px 10px;
+  transform: rotate(12deg); opacity: .85;
+}
+.wanted-name {
+  font-family: 'Rye', serif;
+  font-size: clamp(2rem, 3.8vw, 3.2rem);
+  letter-spacing: 3px; color: var(--rdr-ink); margin: .3rem 0;
+}
+.wanted-subtitle { font-style: italic; color: #5b4632; margin-bottom: .6rem; font-size: 1.05rem; }
+.wanted-quote {
+  font-family: var(--font-rdr-hand); font-size: clamp(1.4rem, 2.4vw, 1.75rem);
+  color: var(--rdr-red); margin: .6rem 0;
+}
+
+/* Barra de progreso / honor */
+.honor-bar { display: flex; align-items: center; gap: .6rem; margin-top: .8rem; }
+.honor-icon { color: #b58a43; font-size: 1.15rem; }
+.honor-track {
+  flex: 1; height: 13px; background: var(--rdr-leather);
+  border: 2px solid var(--rdr-ink); border-radius: 2px; overflow: hidden;
+}
+.honor-fill {
+  height: 100%; background: linear-gradient(90deg, var(--rdr-red), var(--rdr-gold));
+  box-shadow: 0 0 8px var(--rdr-gold); transition: width .6s ease;
+}
+.honor-pct { font-size: .8rem; font-weight: 700; color: var(--rdr-ink); }
+
+/* Botones de acceso rápido del panel principal */
+.action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.action-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
+  min-height: 130px; padding: 1.2rem .8rem; border-radius: 4px;
+  background: linear-gradient(180deg, #654326, #291a10);
+  border: 1px solid #c49a4b;
+  outline: 1px solid rgba(196,154,75,.25); outline-offset: 4px;
+  color: var(--rdr-paper); font-family: var(--font-rdr-title); letter-spacing: 2px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.5);
+  transition: transform .15s, box-shadow .15s;
+}
+.action-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(201,162,39,.3); }
+.action-tile i { font-size: 2.2rem; color: var(--rdr-gold); }
+.action-tile span:first-of-type { font-size: .9rem; text-transform: uppercase; }
+
+/* Botón para entrar al universo Undertale */
+.enter-undertale {
+  display: flex; align-items: center; justify-content: center; gap: .7rem;
+  width: 100%; min-height: 58px; padding: 1rem;
+  background: #000; border: 3px solid var(--ut-white);
+  color: var(--ut-white); font-family: var(--font-ut); font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase;
+  transition: all .2s;
+}
+.enter-undertale:hover { border-color: var(--ut-yellow); color: var(--ut-yellow); box-shadow: 0 0 16px var(--ut-yellow); }
+.ut-heart { color: var(--ut-red); animation: heartbeat 1s infinite; }
+@keyframes heartbeat { 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
+
+/* Tarjetas de información general */
+.card {
+  background: var(--rdr-paper); color: var(--rdr-ink);
+  border: 3px solid var(--rdr-leather); border-left: 5px solid #8b1e1e;
+  border-radius: 4px; padding: 1.2rem;
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+}
+.card h3 { font-family: var(--font-rdr-title); color: var(--rdr-red); margin-bottom: .4rem; font-size: 1.25rem; }
+.card p { font-size: 1rem; line-height: 1.5; }
+
+/* Carrusel de imágenes (Fotos y Frases) */
+.carousel {
+  position: relative; background: #000;
+  border: 4px solid var(--rdr-leather); border-radius: var(--radius); overflow: hidden;
+}
+.carousel-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; }
+.carousel-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(0,0,0,.65); color: var(--rdr-gold);
+  font-size: 1.6rem; display: grid; place-items: center;
+}
+.carousel-btn:first-of-type { left: 10px; }
+.carousel-btn:last-of-type { right: 10px; }
+.carousel-dots { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 7px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.45); cursor: pointer; }
+.dot.active { background: var(--rdr-gold); }
+
+/* Agenda semanal */
+.day-pills { display: flex; gap: .45rem; overflow-x: auto; margin-bottom: 1.1rem; }
+.day-pill {
+  padding: .45rem .85rem; border-radius: 4px;
+  background: var(--rdr-leather); border: 1px solid var(--rdr-gold);
+  color: var(--rdr-paper-2); font-size: .8rem; text-transform: uppercase;
+}
+.day-pill.active { background: var(--rdr-gold); color: var(--rdr-ink); font-weight: 700; }
+.agenda-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: .9rem;
+}
+.agenda-item {
+  background: var(--rdr-paper); color: var(--rdr-ink);
+  border-left: 5px solid var(--rdr-red); padding: 1rem 1.1rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+.agenda-item strong { color: var(--rdr-red); font-size: .85rem; }
+.agenda-item h4 { font-family: var(--font-rdr-title); margin: .25rem 0; }
+.agenda-item p { font-size: .9rem; color: #5b4632; }
+
+/* Redes sociales y formulario de contacto */
+.social-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+.social-block {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem;
+  padding: 1.1rem .5rem; border-radius: 4px;
+  background: var(--rdr-leather); border: 2px solid var(--brand, var(--rdr-gold));
+  color: var(--rdr-paper); font-size: .78rem; text-transform: uppercase;
+  transition: all .2s;
+}
+.social-block i { font-size: 1.6rem; color: var(--brand, var(--rdr-gold)); }
+.social-block:hover { background: var(--brand, var(--rdr-gold)); color: #fff; }
+.social-block:hover i { color: #fff; }
+
+.contact-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+.contact-form input, .contact-form textarea {
+  padding: .75rem .95rem; border-radius: 4px;
+  background: var(--rdr-paper); color: var(--rdr-ink);
+  border: 2px solid var(--rdr-leather); font-family: var(--font-rdr-body); font-size: 1rem;
+}
+.contact-form textarea, .contact-form button { grid-column: 1 / -1; }
+.btn {
+  padding: .75rem 1.2rem; border-radius: 4px;
+  font-family: var(--font-rdr-title); letter-spacing: 1px; text-transform: uppercase;
+  transition: all .2s;
+}
+.btn-primary { background: linear-gradient(180deg, var(--rdr-gold), #a07f1a); color: var(--rdr-ink); border: 2px solid var(--rdr-gold); }
+.btn-primary:hover { box-shadow: 0 0 16px var(--rdr-gold); }
+.btn-ghost { background: transparent; border: 1px solid var(--rdr-gold); color: var(--rdr-gold); }
+
+/* ============================================================
+   5. UNIVERSO UNDERTALE (PIXEL ART)
+   ============================================================ */
+[data-universe="ut"] body, body.universe-ut { background: #000; font-family: var(--font-ut-body); }
+[data-universe="ut"] .app-shell { background: #050507; border-color: rgba(255,255,255,.35); }
+[data-universe="ut"] .app-header, [data-universe="ut"] .app-dock { background: #050507; border-color: #fff; }
+[data-universe="ut"] .header-brand-text strong { color: var(--ut-yellow); font-family: var(--font-ut); font-size: .75rem; }
+[data-universe="ut"] .panel { color: var(--ut-white); }
+[data-universe="ut"] .panel-header { border-bottom: 3px solid #eee; }
+[data-universe="ut"] .panel-title h2 { color: #ffe45c; font-family: var(--font-ut); font-size: .95rem; }
+[data-universe="ut"] .dock-btn.active { background: rgba(255,255,255,.08); color: #ffe45c; box-shadow: inset 0 3px 0 #ffe45c; }
+
+/* Caja de diálogo estilo Undertale */
+.ut-dialog {
+  display: grid; grid-template-columns: 100px 1fr; gap: 1rem;
+  background: #000; border: 4px solid #f5f5f5;
+  padding: 1rem; margin-bottom: 1.2rem;
+}
+.ut-sprite {
+  width: 100px; height: 100px; border: 2px solid #aaa; background: #111;
+  display: grid; place-items: center; font-size: 2.4rem; overflow: hidden;
+}
+.ut-sprite img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.ut-text-box { border: 3px solid #fff; padding: .8rem 1rem; position: relative; min-height: 110px; }
+.ut-speaker { font-family: var(--font-ut); font-size: 10px; color: var(--ut-yellow); margin-bottom: .4rem; }
+.ut-text { font-family: var(--font-ut-body); font-size: 22px; color: var(--ut-white); line-height: 1.4; }
+.ut-arrow { position: absolute; bottom: 8px; right: 12px; color: var(--ut-white); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Pestañas horizontales de categorías en Underground */
+.ut-category-tabs {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; width: 100%;
+}
+.ut-category-tab {
+  min-height: 54px; display: flex; align-items: center; justify-content: space-between;
+  padding: .8rem 1rem; border: 3px solid #f5f5f5; background: #050507;
+  color: #ffe45c; font-family: var(--font-ut); font-size: clamp(9px, 1.3vw, 12px);
+}
+.ut-category-tab.active { border-color: #ffe45c; background: #15130a; }
+.ut-category-panels {
+  width: 100%; margin-top: 1rem; padding: 1rem;
+  border: 2px solid rgba(255,255,255,.8); background: #050507;
+}
+.ut-category-panel {
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: .9rem;
+}
+.ut-category-panel.active { display: grid; }
+.ut-category-panel[hidden] { display: none !important; }
+
+/* Tarjetas de animes, juegos y pasatiempos */
+.ut-card {
+  display: grid; grid-template-columns: 68px 1fr; align-items: center; gap: .85rem;
+  background: #08080a; border: 3px solid #e9e9e9; padding: .8rem;
+  transition: transform .15s, border-color .15s;
+}
+.ut-card:hover { transform: translateY(-2px); border-color: #ffe45c; }
+.ut-card .ut-sprite { width: 68px; height: 68px; font-size: 1.8rem; }
+.ut-card h3 { font-family: var(--font-ut); font-size: 10px; color: #ffe45c; margin-bottom: .35rem; line-height: 1.5; }
+.ut-card p { font-family: var(--font-ut-body); font-size: 18px; color: #eee; line-height: 1.3; }
+
+.ut-exit {
+  display: block; width: 100%; max-width: 380px; margin: 1.4rem auto 0; padding: .9rem;
+  background: #000; border: 3px solid #fff;
+  color: #fff; font-family: var(--font-ut); font-size: 10px; text-transform: uppercase;
+}
+.ut-exit:hover { background: #fff; color: #000; }
+
+@keyframes glitch {
+  0%, 100% { filter: none; transform: none; }
+  25% { filter: invert(1) hue-rotate(90deg); transform: translateX(-2px); }
+  50% { filter: invert(0); transform: translateX(2px); }
+  75% { filter: invert(1); transform: translateX(-1px); }
+}
+body.entering-ut { animation: glitch .5s steps(2) forwards; }
+
+/* ============================================================
+   6. LAYOUT PANORÁMICO HORIZONTAL (ESCRITORIO >= 860px)
+   ============================================================ */
+@media (min-width: 860px) {
+  .app-shell {
+    width: min(calc(100% - 32px), 1440px);
+    height: calc(100dvh - 32px);
+    margin: 16px auto;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* Inicio: Cartel Wanted a la izquierda (1 col) + Acciones y Underground a la derecha (1 col) */
+  .panel--principal {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    grid-template-rows: 1fr auto;
+    align-items: stretch;
+    gap: 1.4rem 2.2rem;
+    padding-top: .4rem;
+  }
+  .panel--principal > .wanted-card { grid-column: 1; grid-row: 1 / 3; }
+  .panel--principal > .action-grid { grid-column: 2; grid-row: 1; }
+  .panel--principal > .enter-undertale { grid-column: 2; grid-row: 2; }
+
+  /* Fotos y Frases: Carrusel panorámico a la izquierda + Tarjeta descriptiva a la derecha */
+  .panel--split-media {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr;
+    align-items: center;
+    gap: 1.4rem 2rem;
+  }
+  .panel--split-media > .panel-header { grid-column: 1 / -1; margin-bottom: 0; }
+  .panel--split-media > .card { height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 1.8rem; }
+
+  /* Redes: Botones sociales a la izquierda + Formulario de contacto a la derecha */
+  .panel--redes {
+    display: grid;
+    grid-template-columns: 0.95fr 1.05fr;
+    align-items: start;
+    gap: 1.4rem 2rem;
+  }
+  .panel--redes > .panel-header { grid-column: 1 / -1; margin-bottom: 0; }
+}
+
+/* Adaptación responsiva para móviles */
+@media (max-width: 859px) {
+  .ut-category-tabs { grid-template-columns: 1fr; gap: .6rem; }
+  .contact-form { grid-template-columns: 1fr; }
+  .carousel-img { aspect-ratio: 4/3; }
+}
+
+/* ============================================================
+   7. TOAST Y DIÁLOGOS MODALES
+   ============================================================ */
+.toast {
+  position: fixed; bottom: calc(var(--dock-h) + 12px); left: 50%;
+  transform: translateX(-50%); z-index: 200;
+  display: flex; align-items: center; gap: .5rem;
+  padding: .7rem 1.2rem; border-radius: var(--radius);
+  background: var(--rdr-leather); border: 2px solid var(--rdr-gold);
+  color: var(--rdr-paper); font-size: .85rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.6);
+}
+.dialog {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(4px); padding: 1rem;
+}
+.dialog[hidden] { display: none; }
+.dialog-card {
+  width: 100%; max-width: 420px;
+  background: var(--rdr-paper); color: var(--rdr-ink);
+  border: 6px solid var(--rdr-leather); border-radius: var(--radius); padding: 1.2rem;
+}
+.dialog-head { display: flex; align-items: center; gap: .8rem; margin-bottom: 1rem; }
+.dialog-head h2 { font-family: var(--font-rdr-title); color: var(--rdr-red); font-size: 1.1rem; flex: 1; }
+.dialog-actions { display: flex; gap: .6rem; justify-content: flex-end; }
+</style>
+</head>
+
+<body class="universe-rdr" data-device="desktop">
+<!-- Detección rápida de dispositivo móvil -->
+<script>if (window.innerWidth <= 768 || /Android|iPhone|iPad/i.test(navigator.userAgent)) document.body.dataset.device = "mobile";</script>
+
+<!-- ============================================================
+     CONTENEDOR PRINCIPAL DE LA APLICACIÓN (APP SHELL)
+     ============================================================ -->
+<div class="app-shell app-shell--portfolio" id="appShell">
+
+  <!-- Cabecera superior: Marca, estado de red, botón de tema y botón de menú -->
+  <header class="app-header app-shell__header" role="banner">
+    <button class="header-brand" data-action="navigate" data-panel="principal" data-hydratable aria-label="Ir a Inicio">
+      <img src ="https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg" alt="Aler" class="header-avatar" width="42" height="42" loading="lazy" data-fallback="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" />
+      <span class="header-brand-text">
+        <strong>Aler</strong>
+        <small>Portafolio</small>
+      </span>
+      <span class="hydrate-dot" data-hydrate-target="principal" title="Rehidratar Inicio">⚡</span>
+    </button>
+
+    <div class="header-actions">
+      <span id="netStatus" class="net-badge" role="status" aria-live="polite">🟢 En línea</span>
+      <button id="btnTheme" class="btn-icon" data-action="theme" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+      <button id="btnMenu" class="btn-icon" data-action="open-menu" title="Menú" aria-label="Abrir menú" aria-expanded="false" aria-controls="navMenu">☰</button>
+    </div>
+  </header>
+
+  <!-- Menú lateral desplegable (Drawer) -->
+  <nav id="navMenu" class="app-drawer" aria-hidden="true" aria-label="Navegación principal">
+    <div class="drawer-head">
+      <strong>Navegación</strong>
+      <button class="btn-icon" data-action="close-menu" aria-label="Cerrar menú">✕</button>
+    </div>
+    <ul class="drawer-list">
+      <li><button data-action="navigate" data-panel="principal"><i class="bi bi-house-door-fill"></i> Inicio</button></li>
+      <li><button data-action="navigate" data-panel="fotos"><i class="bi bi-images"></i> Fotos</button></li>
+      <li><button data-action="navigate" data-panel="agenda"><i class="bi bi-calendar3"></i> Agenda</button></li>
+      <li><button data-action="navigate" data-panel="frases"><i class="bi bi-quote"></i> Frases</button></li>
+      <li><button data-action="navigate" data-panel="redes"><i class="bi bi-share-fill"></i> Redes</button></li>
+      <li><button data-action="enter-undertale"><i class="bi bi-heart-fill" style="color:var(--ut-red)"></i> Underground</button></li>
+    </ul>
+  </nav>
+  <div id="drawerBackdrop" class="drawer-backdrop" hidden></div>
+
+  <!-- Riel lateral de contacto rápido -->
+  <aside id="contactRail" class="contact-rail" aria-label="Redes de contacto">
+    <button id="contactRailToggle" class="contact-rail-toggle" aria-expanded="false" aria-label="Mostrar contactos">◀</button>
+    <div class="contact-rail-list">
+      <a class="contact-rail-link" href="https://www.instagram.com/___aler__._._/" target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-instagram" style="color:#fff;background:linear-gradient(35deg,#ff9a35,#e1306c,#8a3ab9)"></i>
+        <span><strong>INSTAGRAM</strong><small>@___aler__._._/</small><em>En línea</em></span>
+      </a>
+      <a class="contact-rail-link" href="https://github.com/tojial" target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-github" style="color:#fff"></i>
+        <span><strong>GITHUB</strong><small>@tojial</small><em>↗ Repositorios</em></span>
+      </a>
+      <a class="contact-rail-link" href="https://wa.me/?text=Hola%2C%20quiero%20ponerme%20en%20contacto" target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-whatsapp" style="color:#fff;background:#20c96b"></i>
+        <span><strong>WHATSAPP</strong><small>Misiva directa</small><em>Disponible</em></span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Área central donde se renderiza cada sección -->
+  <main id="mainViewport" class="app-main" role="main" tabindex="-1">
+    <div id="panelHost" class="panel-host" aria-live="polite"></div>
+    <div id="panelLoader" class="panel-loader" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <span>Cargando…</span>
+    </div>
+  </main>
+
+  <!-- Barra inferior de navegación rápida (Dock) -->
+  <nav class="app-dock" role="navigation" aria-label="Accesos rápidos">
+    <button class="dock-btn active" data-action="navigate" data-panel="principal" aria-label="Inicio"><i class="bi bi-house-door-fill"></i></button>
+    <button class="dock-btn" data-action="navigate" data-panel="fotos" aria-label="Fotos"><i class="bi bi-images"></i></button>
+    <button class="dock-btn" data-action="navigate" data-panel="agenda" aria-label="Agenda"><i class="bi bi-calendar3"></i></button>
+    <button class="dock-btn" data-action="navigate" data-panel="redes" aria-label="Redes"><i class="bi bi-person-fill"></i></button>
+  </nav>
+</div>
+
+<!-- Notificación flotante temporal (Toast) -->
+<div id="toast" class="toast" role="status" aria-live="assertive" hidden>
+  <i id="toastIcon" class="bi bi-info-circle-fill"></i>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- Modal genérico -->
+<div id="modal" class="dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+  <div class="dialog-card">
+    <div class="dialog-head">
+      <h2 id="modalTitle">Título</h2>
+      <button class="btn-icon" data-action="close-modal" aria-label="Cerrar">✕</button>
+    </div>
+    <div id="modalBody" class="dialog-body"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   BASE DE DATOS EN MEMORIA DE LA APLICACIÓN (DATA)
+   ============================================================ */
+const FALLBACK_AVATAR = "https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg";
+const FALLBACK_CARD   = "https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg";
+
+const DATA = {
+  /* Datos del cartel principal (Wanted) */
+  principal: {
+    avatar: "https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg",
+    nombre: "ALER",
+    titulo: "Estudiante de Ingeniería de Sistemas",
+    frase: "Hacer lo imposible posible.",
+    progreso: 80,
+    progresoLabel: "En constante evolución…",
+    acciones: [
+      { panel: "fotos",    icon: "bi-images",     label: "Fotos" }, 
+      { panel: "agenda",   icon: "bi-calendar3",  label: "Agenda" },
+      { panel: "frases",   icon: "bi-quote",      label: "Frases" },
+      { panel: "redes",    icon: "bi-share-fill", label: "Redes" }
+    ]
+  },
+
+  /* Galería de fotografías */
+  fotos: {
+    fotos: [
+      { img: "https://www.instagram.com/p/DN3CJldWtHxtepmtu8x9Jy6G_gjMCK6t4qNo5A0/", alt: "Perfil",   title: "Mi Perfil Oficial",   sub: "Fotografía de presentación." },
+      { src: "https://www.instagram.com/p/DN3CJldWtHxtepmtu8x9Jy6G_gjMCK6t4qNo5A0/",    alt: "Café",     title: "Café & Enfoque",      sub: "Momentos de concentración." },
+      { src: "https://www.instagram.com/stories/highlights/17921045612796626/",   alt: "Especial", title: "Momentos Especiales", sub: "Recuerdos que valen." },
+      { src: "https://www.instagram.com/stories/highlights/17921045612796626/", alt: "Viaje",    title: "Viajes",              sub: "Explorando nuevos lugares." },
+      { src: "https://www.instagram.com/stories/highlights/17921045612796626/",  alt: "Tatuaje",  title: "Estilo & Arte",       sub: "Expresión personal." }
+    ]
+  },
+
+  /* Actividades semanales organizadas por día */
+  agenda: {
+    actividades: [
+      { day: "lun", time: "08:00", title: "Clases UPDS",    desc: "Ingeniería de Sistemas" },
+      { day: "lun", time: "14:00", title: "Tareas",         desc: "Bases de datos y proyectos" },
+      { day: "lun", time: "20:00", title: "GYM",            desc: "Entrenamiento PowerLifting" },
+      { day: "mar", time: "08:00", title: "Clases UPDS",    desc: "Programación" },
+      { day: "mar", time: "18:00", title: "Desarrollo Web", desc: "PWA y proyectos personales" },
+      { day: "mie", time: "08:00", title: "Clases UPDS",    desc: "Redes y sistemas" },
+      { day: "jue", time: "08:00", title: "Clases UPDS",    desc: "Algoritmos" },
+      { day: "vie", time: "20:00", title: "Gaming",         desc: "Con lo vagooo" },
+      { day: "sab", time: "10:00", title: "GYM",            desc: "Rutina pesada" },
+      { day: "dom", time: "12:00", title: "Descanso",       desc: "Series y música" }
+    ]
+  },
+
+  /* Carrusel de frases motivacionales */
+  frases: {
+    frases: [
+      { src: "img/carpediem.jpg", alt: "Carpe Diem",    title: "Carpe Diem",    desc: "Aprovecha el día presente con determinación." },
+      { src: "img/descarga.jpg",  alt: "Determinación", title: "Determinación", desc: "La disciplina supera a la motivación." },
+      { src: "img/images.jpg",    alt: "Superación",    title: "Superación",    desc: "Cada día un poco mejor que ayer." }
+    ]
+  },
+
+  /* Enlaces a perfiles sociales */
+  redes: {
+    social: [
+      { url: "https://www.instagram.com/___aler__._._/", icon: "bi-instagram", label: "Instagram", color: "#e1306c" },
+      { url: "https://www.tiktok.com/@aler_____?is_from_webapp=1&sender_device=pc", icon: "bi-tiktok", label: "TikTok", color: "#fff" },
+      { url: "https://www.youtube.com/@ElALERGAMER", icon: "bi-youtube", label: "YouTube", color: "#ff0000" },
+      { url: "https://discord.gg/SGADmA979", icon: "bi-discord", label: "Discord", color: "#5865f2" },
+      { url: "https://github.com/tojial", icon: "bi-github", label: "GitHub", color: "#fff" },
+      { url: "https://open.spotify.com/user/313ox7kjpjdemiv7jbhmschwxxm4?si=be553b3710344b54", icon: "bi-spotify", label: "Spotify", color: "#1db954" }
+    ]
+  },
+
+  /* Datos del universo alternativo (Underground / Undertale) */
+  undertale: {
+    dialogo: {
+      speaker: "SANS",
+      sprite: "https://media1.tenor.com/m/mF8rKZ86h44AAAAd/sans-last-breath.gif",
+      fallbackSprite: FALLBACK_CARD,
+      fallbackEmoji: "💀",
+      lineas: [
+        "* heya. bienvenido al underground de aler.",
+        "* aquí encontrarás las cosas que me gustan.",
+        "* hace un hermoso dia afuera"
+      ]
+    },
+    animes: [
+      { img: "https://i.pinimg.com/736x/ee/f1/8d/eef18df6a4054c5b66ef0f971b4aeb77.jpg", emoji: "🪚", title: "CHAINSAW MAN", desc: "Denji, un joven cazador de demonios, se fusiona con su perro motosierra para vengarse y cumplir sus sueños." },
+      { img: "https://i.pinimg.com/736x/18/0a/6f/180a6f14a058ab91b37de483bb023890.jpg", emoji: "🤞", title: "JUJUTSU KAISEN", desc: "Yuji Itadori se une a los hechiceros de jujutsu para combatir maldiciones tras convertirse en el recipiente de Sukuna." },
+      { img: "https://i.pinimg.com/1200x/c6/db/1c/c6db1ce4ee68d9eeb1e5787077f50cec.jpg", emoji: "⚔️", title: "SOLO LEVELING", desc: "Sung Jinwoo, el cazador más débil, obtiene un sistema que le permite subir de nivel sin límites." },
+      { img: "https://i.pinimg.com/1200x/1f/a1/b0/1fa1b0d97db380c812018c8b0ec8b617.jpg", emoji: "🛡️", title: "RECORD OF RAGNAROK", desc: "13 dioses vs 13 humanos en un torneo por el destino de la humanidad. Combates épicos." },
+      { img: "https://i.pinimg.com/736x/4c/0f/28/4c0f28375af651a6533cd253c9ea786c.jpg", emoji: "🧊", title: "ROMPIENDO EL HIELO", desc: "Un viaje de superación y determinación en un mundo congelado. La lucha por sobrevivir." }
+    ],
+    juegos: [
+      { img: "https://upload.wikimedia.org/wikipedia/en/4/44/Red_Dead_Redemption_II.jpg", emoji: "🤠", title: "RED DEAD REDEMPTION 2", desc: "La obra maestra de Rockstar: mundo abierto, honor y redención en el salvaje oeste." },
+      { img: "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1422450/header.jpg", emoji: "🔫", title: "DEADLOCK", desc: "Shooter de héroes 6v6 de Valve con estética noir y mucha movilidad." },
+      { img: "https://i.pinimg.com/1200x/f2/6c/34/f26c34120385a4d582070cf649a91dec.jpg", emoji: "🏍️", title: "DAYS GONE", desc: "Supervivencia zombi en moto, con un mundo abierto hostil y humano." },
+      { img: "https://i.pinimg.com/736x/cd/cc/39/cdcc39c71c42ceafe34ad08e5b324ab5.jpg", emoji: "🛸", title: "STARCRAFT 2", desc: "El RTS competitivo por excelencia: Terran, Zerg y Protoss en equilibrio." },
+      { img: "https://i.pinimg.com/1200x/6e/ab/8e/6eab8e3543fe3668d2068e36562e97d3.jpg", emoji: "❤️", title: "UNDERTALE", desc: "RPG indie donde puedes perdonar a todos. El corazón y la DETERMINACIÓN." }
+    ],
+    pasatiempos: [
+      { emoji: "🏋️", title: "GYM",    desc: "Entrenamiento pa estar más fuerte." },
+      { emoji: "🎮", title: "GAMING", desc: "Con amigos aprendiendo más cosas." },
+      { emoji: "🎧", title: "MÚSICA", desc: "Mi pasatiempo más común para relajarme." }
+    ]
+  }
+};
+</script>
+
+<script type="module">
+/* ============================================================
+   CONTROLADOR DE INTERFAZ, NAVEGACIÓN Y RENDERIZADO
+   ============================================================ */
+
+// Utilidades de selección DOM y escape de caracteres HTML
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const esc = (s = '') => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+// Manejo global de errores al cargar imágenes (aplica imagen o emoji de respaldo)
+document.addEventListener('error', (event) => {
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  if (img.dataset.hideOnError === 'true') { img.hidden = true; return; }
+  const fallback = img.dataset.fallback;
+  if (fallback && !img.dataset.fallbackUsed) {
+    img.dataset.fallbackUsed = 'true';
+    img.src = fallback;
+    return;
+  }
+  if (img.dataset.fallbackText && img.parentElement) {
+    img.parentElement.textContent = img.dataset.fallbackText;
+  }
+}, true);
+
+// Renderiza la imagen de cada tarjeta o su emoji si no tiene imagen
+function renderSprite(item, fallbackUrl = FALLBACK_CARD) {
+  if (item.img) {
+    return `<img src="${esc(item.img)}" alt="${esc(item.title)}" loading="lazy" data-fallback="${esc(fallbackUrl)}" data-fallback-text="${esc(item.emoji || '⭐')}" />`;
+  }
+  return esc(item.emoji || '⭐');
+}
+
+const VALID_PANELS = ['principal','fotos','agenda','frases','redes','undertale'];
+
+// Muestra una notificación flotante temporal
+let toastTimer;
+function toast(msg, type = 'info') {
+  const t = $('#toast');
+  $('#toastMsg').textContent = msg;
+  $('#toastIcon').className = `bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-info-circle-fill'}`;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+}
+
+// Alterna entre tema oscuro y tema claro guardando la preferencia
+function applyTheme(theme) {
+  const next = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  const btn = $('#btnTheme');
+  if (btn) btn.textContent = next === 'light' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem('theme', next); } catch (e) {}
+}
+applyTheme((() => { try { return localStorage.getItem('theme') || 'dark'; } catch (e) { return 'dark'; } })());
+
+// Abre o cierra el menú lateral (Drawer)
+const drawer = $('#navMenu');
+const backdrop = $('#drawerBackdrop');
+const btnMenu = $('#btnMenu');
+function toggleMenu(open) {
+  drawer.classList.toggle('open', open);
+  drawer.setAttribute('aria-hidden', String(!open));
+  btnMenu.setAttribute('aria-expanded', String(open));
+  backdrop.hidden = !open;
+}
+
+// Sistema de navegación SPA basado en hash (#/panel)
+let currentPanel = null;
+function navigate(panel, { replace = false } = {}) {
+  if (!VALID_PANELS.includes(panel)) panel = 'principal';
+  if (panel === currentPanel) return;
+  currentPanel = panel;
+  const hash = `#/${panel}`;
+  if (replace) history.replaceState(null, '', hash);
+  else history.pushState(null, '', hash);
+
+  $$('.dock-btn').forEach(b => b.classList.toggle('active', b.dataset.panel === panel));
+  $$('.drawer-list button[data-panel]').forEach(b => b.classList.toggle('active', b.dataset.panel === panel));
+  renderPanel(panel);
+  toggleMenu(false);
+}
+window.addEventListener('hashchange', () => {
+  const p = location.hash.slice(2) || 'principal';
+  if (VALID_PANELS.includes(p) && p !== currentPanel) navigate(p);
+});
+
+// Genera la cabecera interna de cada subpanel
+function panelHeader(icon, title, sub, backPanel = 'principal') {
+  return `
+    <header class="panel-header">
+      <button class="btn-icon" data-action="navigate" data-panel="${backPanel}" aria-label="Volver">←</button>
+      <div class="panel-title">
+        <i class="bi ${icon}"></i>
+        <h2>${esc(title)}</h2>
+        <small>${esc(sub)}</small>
+      </div>
+      <span style="width:40px"></span>
+    </header>`;
+}
+
+// Inyecta el HTML del panel seleccionado y activa su interactividad
+const host = $('#panelHost');
+let renderTimer = null;
+function renderPanel(panel) {
+  if (renderTimer) clearTimeout(renderTimer);
+  const loader = $('#panelLoader');
+  loader.hidden = false;
+  host.innerHTML = '';
+
+  renderTimer = setTimeout(() => {
+    let html = '';
+    switch (panel) {
+      case 'principal': html = renderPrincipal(DATA.principal); break;
+      case 'fotos':     html = renderFotos(DATA.fotos); break;
+      case 'agenda':    html = renderAgenda(DATA.agenda); break;
+      case 'frases':    html = renderFrases(DATA.frases); break;
+      case 'redes':     html = renderRedes(DATA.redes); break;
+      case 'undertale': html = renderUndertale(DATA.undertale); break;
+    }
+    host.innerHTML = window.DOMPurify
+      ? DOMPurify.sanitize(html, {
+          ADD_ATTR: [
+            'data-action','data-panel','data-day','data-index','data-target',
+            'data-fallback','data-fallback-text','data-fallback-used',
+            'aria-label','loading','width','height','style','target','rel','href','src','alt','role'
+          ]
+        })
+      : html;
+    loader.hidden = true;
+
+    // Cambia el universo visual entre RDR2 y Undertale
+    const isUT = panel === 'undertale';
+    document.documentElement.setAttribute('data-universe', isUT ? 'ut' : 'rdr');
+    document.body.classList.toggle('universe-ut', isUT);
+    document.body.classList.toggle('universe-rdr', !isUT);
+
+    setupInteractivity(panel);
+  }, 120);
+}
+
+/* --- Plantillas HTML de cada panel --- */
+function renderPrincipal(d) {
+  return `
+    <section class="panel panel--principal">
+      <div class="wanted-card">
+        <div class="wanted-stamp">WANTED</div>
+        <div class="wanted-frame">
+          <img src="${esc(d.avatar)}" alt="Aler" class="wanted-photo" width="185" height="185" data-fallback="${esc(FALLBACK_AVATAR)}" />
+        </div>
+        <h1 class="wanted-name">${esc(d.nombre)}</h1>
+        <p class="wanted-subtitle">${esc(d.titulo)}</p>
+        <p class="wanted-quote">“${esc(d.frase)}”</p>
+        <div class="honor-bar">
+          <span class="honor-icon">★</span>
+          <div class="honor-track"><div class="honor-fill" style="width:${d.progreso}%"></div></div>
+          <span class="honor-pct">${d.progreso}%</span>
+        </div>
+        <p style="margin-top:.5rem;font-size:.82rem;color:#6e563f;font-style:italic">${esc(d.progresoLabel)}</p>
+      </div>
+
+      <div class="action-grid">
+        ${d.acciones.map(a => `
+          <button class="action-tile" data-action="navigate" data-panel="${esc(a.panel)}">
+            <i class="bi ${esc(a.icon)}"></i>
+            <span>${esc(a.label)}</span>
+          </button>`).join('')}
+      </div>
+
+      <button class="enter-undertale" data-action="enter-undertale">
+        <span class="ut-heart">❤</span> ENTRAR AL UNDERGROUND
+      </button>
+    </section>`;
+}
+
+function renderFotos(d) {
+  return `
+    <section class="panel panel--split-media">
+      ${panelHeader('bi-images','Fotos','Momentos que cuentan')}
+      <div class="carousel" data-carousel>
+        <button class="carousel-btn" data-action="carousel-prev" aria-label="Anterior">‹</button>
+        <img class="carousel-img" src="${esc(d.fotos[0].src)}" alt="${esc(d.fotos[0].alt)}" data-fallback="${esc(FALLBACK_AVATAR)}" />
+        <button class="carousel-btn" data-action="carousel-next" aria-label="Siguiente">›</button>
+        <div class="carousel-dots">
+          ${d.fotos.map((_, i) => `<span class="dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join('')}
+        </div>
+      </div>
+      <div class="card" id="fotosInfo">
+        <h3>${esc(d.fotos[0].title)}</h3>
+        <p>${esc(d.fotos[0].sub)}</p>
+      </div>
+    </section>`;
+}
+
+function renderAgenda(d) {
+  const days = ['lun','mar','mie','jue','vie','sab','dom'];
+  const labels = { lun:'Lunes', mar:'Martes', mie:'Miércoles', jue:'Jueves', vie:'Viernes', sab:'Sábado', dom:'Domingo' };
+  return `
+    <section class="panel panel--agenda">
+      ${panelHeader('bi-calendar3','Agenda','Organización semanal')}
+      <div class="day-pills">
+        ${days.map(day => `<button class="day-pill ${day === 'lun' ? 'active' : ''}" data-day="${day}">${labels[day]}</button>`).join('')}
+      </div>
+      <div id="agendaList" class="agenda-list">
+        ${d.actividades.filter(a => a.day === 'lun').map(a => `
+          <div class="agenda-item">
+            <strong>${esc(a.time)}</strong>
+            <h4>${esc(a.title)}</h4>
+            <p>${esc(a.desc)}</p>
+          </div>`).join('')}
+      </div>
+    </section>`;
+}
+
+function renderFrases(d) {
+  return `
+    <section class="panel panel--split-media">
+      ${panelHeader('bi-quote','Frases','Inspiración diaria')}
+      <div class="carousel" data-carousel>
+        <button class="carousel-btn" data-action="carousel-prev" aria-label="Anterior">‹</button>
+        <img class="carousel-img" src="${esc(d.frases[0].src)}" alt="${esc(d.frases[0].alt)}" data-fallback="${esc(FALLBACK_CARD)}" />
+        <button class="carousel-btn" data-action="carousel-next" aria-label="Siguiente">›</button>
+        <div class="carousel-dots">
+          ${d.frases.map((_, i) => `<span class="dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join('')}
+        </div>
+      </div>
+      <div class="card" id="frasesInfo">
+        <h3>${esc(d.frases[0].title)}</h3>
+        <p>${esc(d.frases[0].desc)}</p>
+      </div>
+    </section>`;
+}
+
+function renderRedes(d) {
+  return `
+    <section class="panel panel--redes">
+      ${panelHeader('bi-share-fill','Redes','Conecta conmigo')}
+      <div class="social-grid">
+        ${d.social.map(s => `
+          <a class="social-block" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" style="--brand:${esc(s.color)}">
+            <i class="bi ${esc(s.icon)}"></i>
+            <span>${esc(s.label)}</span>
+          </a>`).join('')}
+      </div>
+      <form class="contact-form" id="contactForm">
+        <input type="text" name="nombre" placeholder="Tu nombre" required />
+        <input type="email" name="email" placeholder="Tu correo" required />
+        <textarea name="mensaje" rows="4" placeholder="Tu mensaje..." required></textarea>
+        <button type="submit" class="btn btn-primary">Enviar mensaje</button>
+      </form>
+    </section>`;
+}
+
+function renderUndertale(d) {
+  return `
+    <section class="panel panel--undertale">
+      ${panelHeader('bi-heart-fill','Underground','El mundo de Aler')}
+      <div class="ut-dialog">
+        <div class="ut-sprite">
+          <img src="${esc(d.dialogo.sprite)}" alt="Sans" data-fallback="${esc(d.dialogo.fallbackSprite)}" data-fallback-text="${esc(d.dialogo.fallbackEmoji)}" />
+        </div>
+        <div class="ut-text-box">
+          <div class="ut-speaker">* ${esc(d.dialogo.speaker)}</div>
+          <div class="ut-text" id="utText">${esc(d.dialogo.lineas[0])}</div>
+          <span class="ut-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="ut-accordion-group">
+        <div class="ut-category-tabs">
+          <button class="ut-category-tab active" data-target="animes">ANIMES <span>▼</span></button>
+          <button class="ut-category-tab" data-target="juegos">JUEGOS <span>▼</span></button>
+          <button class="ut-category-tab" data-target="pasatiempos">PASATIEMPOS <span>▼</span></button>
+        </div>
+
+        <div class="ut-category-panels">
+          <div class="ut-category-panel active" id="panel-animes">
+            ${d.animes.map(item => `
+              <div class="ut-card">
+                <div class="ut-sprite">${renderSprite(item)}</div>
+                <div><h3>${esc(item.title)}</h3><p>${esc(item.desc)}</p></div>
+              </div>`).join('')}
+          </div>
+
+          <div class="ut-category-panel" id="panel-juegos" hidden>
+            ${d.juegos.map(item => `
+              <div class="ut-card">
+                <div class="ut-sprite">${renderSprite(item)}</div>
+                <div><h3>${esc(item.title)}</h3><p>${esc(item.desc)}</p></div>
+              </div>`).join('')}
+          </div>
+
+          <div class="ut-category-panel" id="panel-pasatiempos" hidden>
+            ${d.pasatiempos.map(item => `
+              <div class="ut-card">
+                <div class="ut-sprite">${renderSprite(item)}</div>
+                <div><h3>${esc(item.title)}</h3><p>${esc(item.desc)}</p></div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <button class="ut-exit" data-action="navigate" data-panel="principal">SALIR DEL UNDERGROUND</button>
+    </section>`;
+}
+
+// Configura los eventos internos tras renderizar cada panel
+function setupInteractivity(panel) {
+  // Cambio de pestañas en Underground
+  const tabs = $$('.ut-category-tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.target;
+      $$('.ut-category-panel').forEach(p => {
+        const match = p.id === `panel-${target}`;
+        p.classList.toggle('active', match);
+        p.hidden = !match;
+      });
+    });
+  });
+
+  // Control del carrusel de Fotos / Frases
+  const carousel = $('[data-carousel]');
+  if (carousel) {
+    let idx = 0;
+    const img = carousel.querySelector('.carousel-img');
+    const dots = carousel.querySelectorAll('.dot');
+    const items = DATA[panel][panel];
+    const info = $(`#${panel}Info`);
+
+    const update = (newIdx) => {
+      idx = (newIdx + items.length) % items.length;
+      delete img.dataset.fallbackUsed;
+      img.src = items[idx].src;
+      img.alt = items[idx].alt;
+      dots.forEach((dot, i) => dot.classList.toggle('active', i === idx));
+      if (info) {
+        info.querySelector('h3').textContent = items[idx].title;
+        info.querySelector('p').textContent = panel === 'fotos' ? items[idx].sub : items[idx].desc;
+      }
+    };
+
+    carousel.querySelector('[data-action="carousel-prev"]').addEventListener('click', () => update(idx - 1));
+    carousel.querySelector('[data-action="carousel-next"]').addEventListener('click', () => update(idx + 1));
+    dots.forEach((dot, i) => dot.addEventListener('click', () => update(i)));
+  }
+
+  // Filtro de días en la Agenda
+  const dayPills = $$('.day-pill');
+  if (dayPills.length) {
+    const agendaList = $('#agendaList');
+    dayPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        dayPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const filtered = DATA.agenda.actividades.filter(a => a.day === pill.dataset.day);
+        agendaList.innerHTML = filtered.map(a => `
+          <div class="agenda-item">
+            <strong>${esc(a.time)}</strong>
+            <h4>${esc(a.title)}</h4>
+            <p>${esc(a.desc)}</p>
+          </div>`).join('');
+      });
+    });
+  }
+}
+
+// Carga inicial de la ruta
+document.addEventListener('DOMContentLoaded', () => {
+  navigate(location.hash.slice(2) || 'principal', { replace: true });
+});
+
+// Delegación global de clics
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-action]');
+  if (!target) return;
+  const action = target.dataset.action;
+
+  if (action === 'navigate') navigate(target.dataset.panel);
+  else if (action === 'enter-undertale') {
+    document.body.classList.add('entering-ut');
+    setTimeout(() => { document.body.classList.remove('entering-ut'); navigate('undertale'); }, 450);
+  }
+  else if (action === 'theme') toggleTheme();
+  else if (action === 'open-menu') toggleMenu(true);
+  else if (action === 'close-menu') toggleMenu(false);
+  else if (action === 'close-modal') $('#modal').hidden = true;
+});
+
+// Envío simulado del formulario de contacto
+document.addEventListener('submit', (e) => {
+  if (e.target.id === 'contactForm') {
+    e.preventDefault();
+    toast('Mensaje enviado (simulado)', 'success');
+    e.target.reset();
+  }
+});
+
+// Cierre del menú lateral y despliegue del riel de contacto
+backdrop.addEventListener('click', () => toggleMenu(false));
+$('#contactRailToggle')?.addEventListener('click', () => {
+  const isOpen = $('#contactRail').classList.toggle('open');
+  $('#contactRailToggle').setAttribute('aria-expanded', String(isOpen));
+  $('#contactRailToggle').textContent = isOpen ? '▶' : '◀';
+});
+</script>
+</body>
+</html>
