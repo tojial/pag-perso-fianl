@@ -238,6 +238,31 @@ body::before {
   padding: clamp(1rem, 2.2vw, 2rem);
 }
 .panel-host { height: 100%; min-height: 0; overflow: hidden; }
+
+/* Desplazamiento exclusivo para Underground en PC y laptop */
+#panelHost.is-undertale {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff #111111;
+  scroll-behavior: smooth;
+}
+#panelHost.is-undertale > .panel--undertale {
+  height: auto !important;
+  max-height: none !important;
+  min-height: 100%;
+  overflow: visible !important;
+  padding-bottom: 35px;
+}
+#panelHost.is-undertale::-webkit-scrollbar { width: 9px; }
+#panelHost.is-undertale::-webkit-scrollbar-track { background: #111111; }
+#panelHost.is-undertale::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  border-radius: 10px;
+}
 .panel {
   height: 100%; max-height: 100%;
   max-width: 1320px; margin: 0 auto;
@@ -403,6 +428,19 @@ body::before {
 }
 .card h3 { font-family: var(--font-rdr-title); color: var(--rdr-red); margin-bottom: .4rem; font-size: 1.25rem; }
 .card p { font-size: 1rem; line-height: 1.5; }
+
+/* Corrección de contraste en las secciones Fotos y Frases al activar tema claro */
+[data-theme="light"] .panel--split-media > .card {
+  background: #f4e8dc;
+  color: #2b1d12;
+  border-color: #3b2a1a;
+}
+[data-theme="light"] .panel--split-media > .card h3 {
+  color: #8b1e1e;
+}
+[data-theme="light"] .panel--split-media > .card p {
+  color: #2b1d12;
+}
 
 /* Carrusel de imágenes (Fotos y Frases) */
 .carousel {
@@ -629,6 +667,181 @@ body.entering-ut { animation: glitch .5s steps(2) forwards; }
 .dialog-head { display: flex; align-items: center; gap: .8rem; margin-bottom: 1rem; }
 .dialog-head h2 { font-family: var(--font-rdr-title); color: var(--rdr-red); font-size: 1.1rem; flex: 1; }
 .dialog-actions { display: flex; gap: .6rem; justify-content: flex-end; }
+
+
+/* ============================================================
+   TEMA CLARO/OSCURO MEJORADO: INICIO Y UNDERGROUND
+   El tema oscuro conserva la apariencia original.
+   ============================================================ */
+
+/* Paleta clara western: papel claro y texto oscuro legible */
+[data-theme="light"] {
+  --rdr-bg: #e8dfcf;
+  --rdr-paper: #f8f1e5;
+  --rdr-paper-2: #e7d8c2;
+  --rdr-leather: #5b3824;
+  --rdr-leather-2: #765033;
+  --rdr-wood: #8a6239;
+  --rdr-gold: #9a6a19;
+  --rdr-gold-bright: #b9852d;
+  --rdr-red: #8b1e1e;
+  --rdr-red-2: #a52b2b;
+  --rdr-ink: #2b1d12;
+  --rdr-fade: #66543e;
+}
+
+[data-theme="light"] body,
+[data-theme="light"] .app-main {
+  background-color: #e8dfcf;
+  color: #2b1d12;
+}
+
+/* Inicio: tarjeta Wanted y botones con contraste correcto */
+[data-theme="light"] .panel--principal .wanted-card {
+  background-color: #f1e4c9;
+  color: #2b1d12;
+  border-color: #5b3824;
+  outline-color: #9a6a19;
+}
+[data-theme="light"] .panel--principal .wanted-name,
+[data-theme="light"] .panel--principal .wanted-subtitle,
+[data-theme="light"] .panel--principal .honor-pct {
+  color: #2b1d12;
+}
+[data-theme="light"] .panel--principal .wanted-quote,
+[data-theme="light"] .panel--principal .wanted-stamp {
+  color: #8b1e1e;
+}
+[data-theme="light"] .panel--principal .action-tile {
+  background: linear-gradient(180deg, #f4e5c8, #d8bd91);
+  border-color: #8b642d;
+  color: #2b1d12;
+  box-shadow: 0 5px 13px rgba(50, 32, 15, .22);
+}
+[data-theme="light"] .panel--principal .action-tile i {
+  color: #805515;
+}
+[data-theme="light"] .panel--principal .enter-undertale {
+  background: #171717;
+  border-color: #343434;
+  color: #fff;
+}
+[data-theme="light"] .panel--principal .enter-undertale:hover {
+  border-color: #9a7900;
+  color: #ffe45c;
+}
+
+/* Encabezado y barra inferior en modo claro */
+[data-theme="light"] .app-header,
+[data-theme="light"] .app-dock {
+  background: linear-gradient(180deg, #ead9b9, #c9a979);
+  border-color: #805b2d;
+}
+[data-theme="light"] .header-brand-text strong,
+[data-theme="light"] .header-brand-text small,
+[data-theme="light"] .dock-btn {
+  color: #382416;
+}
+[data-theme="light"] .btn-icon {
+  color: #382416;
+  background: rgba(255,255,255,.35);
+  border-color: rgba(91,56,36,.5);
+}
+[data-theme="light"] .dock-btn.active,
+[data-theme="light"] .dock-btn:hover {
+  background: linear-gradient(180deg, #8b642d, #68451f);
+  color: #fff8e9;
+}
+
+/* Underground en tema claro: escenario claro, texto oscuro y acentos amarillos */
+[data-theme="light"][data-universe="ut"] body,
+[data-theme="light"] body.universe-ut {
+  background: #e9e9e9;
+}
+[data-theme="light"][data-universe="ut"] .app-shell,
+[data-theme="light"][data-universe="ut"] .app-main,
+[data-theme="light"][data-universe="ut"] .panel-host {
+  background: #e9e9e9;
+}
+[data-theme="light"][data-universe="ut"] .app-header,
+[data-theme="light"][data-universe="ut"] .app-dock {
+  background: #dedede;
+  border-color: #333;
+}
+[data-theme="light"][data-universe="ut"] .header-brand-text strong,
+[data-theme="light"][data-universe="ut"] .header-brand-text small,
+[data-theme="light"][data-universe="ut"] .dock-btn {
+  color: #202020;
+}
+[data-theme="light"][data-universe="ut"] .panel,
+[data-theme="light"][data-universe="ut"] .panel-title h2 {
+  color: #202020;
+}
+[data-theme="light"][data-universe="ut"] .panel-header {
+  border-bottom-color: #333;
+}
+[data-theme="light"][data-universe="ut"] .ut-dialog {
+  background: #f7f7f7;
+  border-color: #333;
+}
+[data-theme="light"][data-universe="ut"] .ut-sprite {
+  background: #dedede;
+  border-color: #555;
+}
+[data-theme="light"][data-universe="ut"] .ut-text-box {
+  background: #fff;
+  border-color: #333;
+}
+[data-theme="light"][data-universe="ut"] .ut-speaker,
+[data-theme="light"][data-universe="ut"] .ut-text,
+[data-theme="light"][data-universe="ut"] .ut-arrow {
+  color: #222;
+}
+[data-theme="light"][data-universe="ut"] .ut-category-panels {
+  background: #f7f7f7;
+  border-color: #444;
+}
+[data-theme="light"][data-universe="ut"] .ut-category-tab {
+  background: #fff;
+  color: #765900;
+  border-color: #333;
+}
+[data-theme="light"][data-universe="ut"] .ut-category-tab.active {
+  background: #fff4bf;
+  color: #594300;
+  border-color: #9a7900;
+}
+[data-theme="light"][data-universe="ut"] .ut-card {
+  background: #fff;
+  border-color: #555;
+}
+[data-theme="light"][data-universe="ut"] .ut-card h3 {
+  color: #765900;
+}
+[data-theme="light"][data-universe="ut"] .ut-card p {
+  color: #222;
+}
+[data-theme="light"][data-universe="ut"] .ut-exit {
+  background: #fff;
+  color: #222;
+  border-color: #333;
+}
+[data-theme="light"][data-universe="ut"] .ut-exit:hover {
+  background: #222;
+  color: #fff;
+}
+[data-theme="light"][data-universe="ut"] .dock-btn.active,
+[data-theme="light"][data-universe="ut"] .dock-btn:hover {
+  background: #d5d5d5;
+  color: #765900;
+  box-shadow: inset 0 3px 0 #9a7900;
+}
+
+/* En pantallas con modo claro, el texto secundario mantiene contraste */
+[data-theme="light"] .panel-title small {
+  color: #59452d;
+}
+
 </style>
 </head>
 
@@ -890,7 +1103,11 @@ function applyTheme(theme) {
   const next = theme === 'light' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   const btn = $('#btnTheme');
-  if (btn) btn.textContent = next === 'light' ? '☀️' : '🌙';
+  if (btn) {
+    btn.textContent = next === 'light' ? '☀️' : '🌙';
+    btn.title = next === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+    btn.setAttribute('aria-label', btn.title);
+  }
 }
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'dark';
@@ -952,6 +1169,11 @@ function renderPanel(panel) {
   if (renderTimer) clearTimeout(renderTimer);
   const loader = $('#panelLoader');
   loader.hidden = false;
+
+  // Underground utiliza el scroll del contenedor para que todo su contenido
+  // sea accesible con la rueda del mouse en PC y laptop.
+  host.classList.toggle('is-undertale', panel === 'undertale');
+  host.scrollTop = 0;
   host.innerHTML = '';
 
   renderTimer = setTimeout(() => {
