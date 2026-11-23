@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="es" data-universe="rdr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+<title>Aler Presentación • Portafolio PWA</title>
+<meta name="description" content="Portafolio PWA de Aler con estética western inspirada en Red Dead Redemption II, accesibilidad WCAG y Smoke Testing." />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#1a1410" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Aler" />
+
+<!-- Manifiesto e íconos embebidos dinámicamente para funcionar en un solo archivo HTML -->
+<link id="pwaManifestLink" rel="manifest" />
+<link id="appleTouchIconLink" rel="apple-touch-icon" />
+<link id="faviconIconLink" rel="icon" type="image/svg+xml" />
+
+<script>
+/* ============================================================
+   GENERACIÓN DINÁMICA DE ÍCONO SVG Y MANIFEST.JSON EMBEBIDO
+   ============================================================ */
+(function initEmbeddedManifest() {
+  const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="96" fill="#1a1410"/>
+    <rect x="24" y="24" width="464" height="464" rx="76" fill="none" stroke="#c9a227" stroke-width="14"/>
+    <text x="50%" y="56%" dominant-baseline="middle" text-anchor="middle"
+          font-family="Georgia, serif" font-weight="bold" font-size="250" fill="#c9a227">A</text>
+  </svg>`;
+  const iconDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg);
+
+  const favLink = document.getElementById('faviconIconLink');
+  const appleLink = document.getElementById('appleTouchIconLink');
+  if (favLink) favLink.href = iconDataUrl;
+  if (appleLink) appleLink.href = iconDataUrl;
+
+  const baseUrl = window.location.href.split('#')[0];
+  const manifestObj = {
+    name: "Aler Presentación • Portafolio PWA",
+    short_name: "Aler PWA",
+    description: "Portafolio PWA adaptable de Aler (RDR2 + Underground)",
+    start_url: baseUrl,
+    scope: baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1) || "./",
+    display: "standalone",
+    orientation: "any",
+    background_color: "#1a1410",
+    theme_color: "#1a1410",
+    icons: [
+      {
+        src: iconDataUrl,
+        sizes: "192x192",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      },
+      {
+        src: iconDataUrl,
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }
+    ]
+  };
+
+  try {
+    const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const manifestLink = document.getElementById('pwaManifestLink');
+    if (manifestLink) manifestLink.href = manifestUrl;
+  } catch (err) {
+    console.warn('No se pudo generar el Blob del manifiesto:', err);
+  }
+})();
+</script>
+
+<!-- Fuentes tipográficas temáticas (Western RDR2 + Pixel Art Undertale) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Playfair+Display+SC:wght@700;900&display=swap" rel="stylesheet" />
+
+<!-- Iconos Bootstrap y librería DOMPurify para sanitización de HTML -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
+
+<style>
+/* ============================================================
+   1. VARIABLES DE DISEÑO (TOKENS RDR2 + UNDERTALE)
+   ============================================================ */
+:root {
+  --rdr-bg:        #1a1410;
+  --rdr-paper:     #e8dcc0;
+  --rdr-paper-2:   #d4c4a0;
+  --rdr-leather:   #3b2a1a;
+  --rdr-leather-2: #5a3e28;
+  --rdr-wood:      #6b4a2b;
+  --rdr-gold:      #c9a227;
+  --rdr-red:       #8b1e1e;
+  --rdr-red-2:     #b33a3a;
+  --rdr-ink:       #2b1d12;
+  --rdr-fade:      #8a7a5c;
+
+  --ut-bg:     #000;
+  --ut-white:  #fff;
+  --ut-red:    #ff0000;
+  --ut-yellow: #ffff00;
+  --ut-cyan:   #00ffff;
+
+  --font-rdr-title: 'Cinzel', serif;
+  --font-rdr-body:  'EB Garamond', serif;
+  --font-rdr-hand:  'Caveat', cursive;
+  --font-ut:        'Press Start 2P', monospace;
+  --font-ut-body:   'VT323', monospace;
+
+  --success: #22c55e;
+  --danger:  #ef4444;
+  --header-h: 64px;
+  --dock-h:   64px;
+  --radius:   8px;
+}
+
+/* Sobrescritura de colores para el Tema Claro */
+[data-theme="light"] {
+  --rdr-bg: #e8dfcf;
+  --rdr-paper: #f8f1e5;
+  --rdr-paper-2: #e7d8c2;
+  --rdr-leather: #5b3824;
+  --rdr-leather-2: #765033;
+  --rdr-wood: #8a6239;
+  --rdr-gold: #9a6a19;
+  --rdr-gold-bright: #b9852d;
+  --rdr-red: #8b1e1e;
+  --rdr-red-2: #a52b2b;
+  --rdr-ink: #2b1d12;
+  --rdr-fade: #66543e;
+}
+
+/* ============================================================
+   2. RESET, ACCESIBILIDAD BASE Y ENFOQUE (:focus-visible)
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-rdr-body);
+  background: var(--rdr-bg);
+  color: var(--rdr-paper);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+
+/* Anillo de enfoque visible para navegación por teclado (Tab / Enter) */
+:focus-visible {
+  outline: 3px solid #0d9488 !important;
+  outline-offset: 2px !important;
+}
+
+/* Enlace saltar al contenido principal (a11y teclado) */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 1rem;
+  z-index: 999;
+  padding: .65rem 1rem;
+  background: #0d9488;
+  color: #ffffff;
+  font-family: var(--font-rdr-title);
+  font-weight: 700;
+  border-radius: 6px;
+  transition: top .2s;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Clase utilitaria solo para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Viñeta atmosférica en toda la pantalla */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.75) 100%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+}
+
+/* ============================================================
+   3. ESTRUCTURA PRINCIPAL MOBILE-FIRST (FLEXBOX + MEDIA QUERIES)
+   ============================================================ */
+.app-shell {
+  position: relative; z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: min(100%, 1440px);
+  max-width: 1440px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, rgba(34,24,16,.98), rgba(12,9,7,.99));
+  border-left: 1px solid rgba(215,181,109,.25);
+  border-right: 1px solid rgba(215,181,109,.25);
+  box-shadow: 0 0 60px rgba(0,0,0,.8);
+}
+
+/* Cabecera superior */
+.app-header {
+  flex: 0 0 var(--header-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(.75rem, 3vw, 2.5rem);
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #4a3220, #24170f);
+  border-bottom: 3px solid #b58a43;
+  box-shadow: 0 4px 12px rgba(0,0,0,.5);
+  z-index: 10;
+}
+.header-brand {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .3rem .5rem; border-radius: var(--radius);
+  position: relative;
+  transition: background .2s;
+}
+.header-brand:hover { background: rgba(201,162,39,.1); }
+.header-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 2px solid #d2ad58; object-fit: cover;
+}
+.header-brand-text { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+.header-brand-text strong {
+  font-family: 'Rye', serif; color: var(--rdr-gold);
+  font-size: 1.2rem; letter-spacing: 3px;
+}
+.header-brand-text small { font-size: .68rem; color: var(--rdr-paper-2); letter-spacing: 1px; }
+.header-actions { display: flex; align-items: center; gap: .4rem; flex-wrap: nowrap; }
+
+/* Botones de herramientas en cabecera (PWA + Accesibilidad + Smoke Test) */
+.tool-pill-btn {
+  display: inline-flex; align-items: center; gap: .32rem;
+  padding: .36rem .65rem; border-radius: 6px;
+  background: rgba(201,162,39,.14);
+  border: 1px solid rgba(201,162,39,.55);
+  color: var(--rdr-paper); font-family: var(--font-rdr-title);
+  font-size: .7rem; font-weight: 700; letter-spacing: .4px;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tool-pill-btn:hover, .tool-pill-btn[aria-pressed="true"] {
+  background: var(--rdr-gold);
+  color: #1a120c;
+}
+.tool-pill-btn--install {
+  background: linear-gradient(180deg, var(--rdr-gold), #9a7418);
+  color: #1a120c;
+  border-color: #f0d47a;
+}
+.tool-pill-btn[hidden] { display: none !important; }
+
+/* Indicador de conexión (Online / Offline) */
+.net-badge {
+  font-size: .7rem; padding: .28rem .55rem; border-radius: 4px;
+  background: rgba(34,197,94,.15); border: 1px solid var(--success);
+  color: var(--success); white-space: nowrap;
+}
+.net-badge.offline { background: rgba(239,68,68,.15); border-color: var(--danger); color: var(--danger); }
+
+.btn-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 1rem;
+  background: rgba(201,162,39,.1); border: 1px solid rgba(201,162,39,.4);
+  transition: all .2s;
+}
+.btn-icon:hover { background: var(--rdr-gold); color: var(--rdr-ink); }
+
+/* Barra de Auditoría Rápida (Smoke Test DOM - Guía Parte 2) */
+.panel-auditoria {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem 1rem;
+  padding: .5rem clamp(.75rem, 3vw, 2.5rem);
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(201,162,39,.35);
+  font-size: .82rem;
+}
+.panel-auditoria-controls {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.btn-smoke {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .3rem .75rem;
+  border-radius: 5px;
+  background: #0d9488;
+  color: #ffffff;
+  font-family: var(--font-rdr-title);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+.btn-smoke:hover { background: #0f766e; }
+#salidaAudit {
+  font-family: monospace;
+  font-size: .78rem;
+  color: #e2e8f0;
+}
+
+/* Cuerpo adaptable: Vertical (Portrait) vs Horizontal (Landscape / PC) */
+.app-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Área central donde se inyectan los paneles */
+.app-main {
+  flex: 1 1 auto;
+  position: relative; overflow: hidden; min-height: 0;
+  padding: clamp(1rem, 2.2vw, 2rem);
+}
+.panel-host { height: 100%; min-height: 0; overflow: hidden; }
+
+#panelHost.is-undertale {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff #111111;
+  scroll-behavior: smooth;
+}
+#panelHost.is-undertale > .panel--undertale {
+  height: auto !important;
+  max-height: none !important;
+  min-height: 100%;
+  overflow: visible !important;
+  padding-bottom: 35px;
+}
+#panelHost.is-undertale::-webkit-scrollbar { width: 9px; }
+#panelHost.is-undertale::-webkit-scrollbar-track { background: #111111; }
+#panelHost.is-undertale::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  border-radius: 10px;
+}
+
+.panel {
+  height: 100%; max-height: 100%;
+  max-width: 1320px; margin: 0 auto;
+  overflow-y: auto; overflow-x: hidden;
+  padding: 0 4px 1.5rem;
+  scrollbar-width: none;
+  animation: fadeIn .35s ease;
+}
+.panel::-webkit-scrollbar { display: none; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Spinner de carga entre vistas */
+.panel-loader {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1rem; height: 100%; color: var(--rdr-fade);
+}
+.spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid rgba(201,162,39,.3); border-top-color: var(--rdr-gold);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Barra de navegación (Dock): abajo en vertical, lateral izquierda en horizontal/PC */
+.app-dock {
+  flex: 0 0 var(--dock-h);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  gap: .4rem;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 2px, transparent 2px 6px),
+    linear-gradient(0deg, #1a110b, #49301d);
+  border-top: 3px solid #b58a43;
+  padding: 0 .6rem;
+}
+.dock-btn {
+  flex: 1 1 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 1.25rem;
+  color: var(--rdr-paper-2);
+  position: relative;
+  transition: color .2s, background .2s;
+}
+.dock-btn span {
+  font-family: var(--font-rdr-title);
+  font-size: .62rem;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+}
+.dock-btn:hover, .dock-btn.active {
+  background: linear-gradient(180deg, #d7b56d, #8a6a2c);
+  color: #1a120c;
+}
+
+/* Reacomodo automático en PC o Celular Horizontal (Landscape) sin tocar el HTML */
+@media (min-width: 768px), (orientation: landscape) {
+  .app-body {
+    flex-direction: row;
+  }
+  .app-dock {
+    order: -1;
+    flex: 0 0 118px;
+    width: 118px;
+    height: auto;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 1rem .5rem;
+    gap: .65rem;
+    border-top: none;
+    border-right: 3px solid #b58a43;
+  }
+  .dock-btn {
+    flex: 0 0 auto;
+    width: 100%;
+    height: 64px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(201,162,39,.22);
+  }
+}
+
+/* Menú lateral desplegable (Drawer) */
+.app-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+  background: var(--rdr-leather); border-right: 2px solid var(--rdr-gold);
+  transform: translateX(-100%); transition: transform .3s ease;
+  z-index: 100; overflow-y: auto; padding: 1rem 0;
+}
+.app-drawer.open { transform: translateX(0); }
+.drawer-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 1rem 1rem; border-bottom: 1px solid rgba(201,162,39,.3);
+}
+.drawer-head strong { font-family: var(--font-rdr-title); color: var(--rdr-gold); letter-spacing: 1px; }
+.drawer-list li { border-bottom: 1px solid rgba(201,162,39,.1); }
+.drawer-list button {
+  display: flex; align-items: center; gap: .6rem;
+  width: 100%; padding: .85rem 1rem; text-align: left;
+  color: var(--rdr-paper); font-size: 1rem;
+  transition: background .2s; position: relative;
+}
+.drawer-list button:hover, .drawer-list button.active {
+  background: rgba(201,162,39,.18);
+  border-left: 3px solid var(--rdr-gold);
+}
+.drawer-list i { color: var(--rdr-gold); font-size: 1.1rem; }
+.drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  z-index: 99; backdrop-filter: blur(2px);
+}
+
+/* Riel flotante derecho de contacto rápido */
+.contact-rail {
+  position: fixed; z-index: 80; right: 0; top: 50%;
+  transform: translate(calc(100% - 34px), -50%);
+  width: min(270px, 82vw); padding: 9px 10px 9px 12px;
+  background: rgba(34,20,29,.97); border: 1px solid rgba(201,162,39,.55);
+  border-right: 0; border-radius: 13px 0 0 13px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.55); transition: transform .28s ease;
+}
+.contact-rail.open { transform: translate(0, -50%); }
+.contact-rail-toggle {
+  position: absolute; left: -34px; top: 50%; transform: translateY(-50%);
+  width: 34px; height: 58px; display: grid; place-items: center;
+  border: 1px solid rgba(201,162,39,.55); border-right: 0;
+  border-radius: 10px 0 0 10px; background: #382416; color: var(--rdr-paper);
+  font-size: 1.25rem;
+}
+.contact-rail-list { display: grid; gap: 7px; }
+.contact-rail-link {
+  min-height: 52px; display: grid; grid-template-columns: 36px 1fr; align-items: center; gap: 9px;
+  padding: 6px 9px; border: 1px solid rgba(201,162,39,.28); border-radius: 10px;
+  background: rgba(255,255,255,.045); color: var(--rdr-paper); transition: .2s;
+}
+.contact-rail-link:hover { border-color: var(--rdr-gold); background: rgba(201,162,39,.12); transform: translateX(-2px); }
+.contact-rail-link i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; font-size: 1.15rem; background: #30202a; }
+.contact-rail-link strong { display: block; font: 700 .78rem var(--font-rdr-title); }
+.contact-rail-link small { display: block; color: #d5bd91; font-size: .68rem; }
+.contact-rail-link em { display: block; color: #35df75; font: 700 .62rem var(--font-rdr-body); }
+
+[data-hydratable] { position: relative; }
+.hydrate-dot {
+  position: absolute; top: 4px; right: 4px;
+  width: 18px; height: 18px; display: grid; place-items: center;
+  font-size: 9px; border-radius: 50%;
+  background: rgba(201,162,39,.15); border: 1px solid var(--rdr-gold);
+  color: var(--rdr-gold); opacity: .75;
+}
+
+/* ============================================================
+   4. COMPONENTES TEMÁTICOS RDR2 (CARTEL WANTED, TARJETAS, CARRUSEL)
+   ============================================================ */
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem; padding-bottom: .8rem;
+  border-bottom: 1px solid rgba(210,173,88,.45);
+}
+.panel-title { text-align: center; flex: 1; }
+.panel-title i { color: var(--rdr-gold); font-size: 1.5rem; }
+.panel-title h2 {
+  font-family: 'Playfair Display SC', serif; color: var(--rdr-gold);
+  font-size: clamp(1.2rem, 2.5vw, 1.7rem); letter-spacing: 3px; margin-top: .2rem;
+}
+.panel-title small { color: #c1a77c; font-style: italic; }
+
+/* Cartel de Se Busca (Wanted) */
+.wanted-card {
+  background-color: #e7d8b8;
+  background-image:
+    radial-gradient(ellipse at 20% 15%, rgba(255,255,255,.28), transparent 35%),
+    repeating-linear-gradient(3deg, rgba(70,45,20,.025) 0 1px, transparent 1px 4px);
+  border: 10px solid #382416;
+  outline: 1px solid #b58a43;
+  outline-offset: -15px;
+  border-radius: 4px;
+  padding: clamp(1.4rem, 2.8vw, 2.4rem);
+  text-align: center;
+  box-shadow: 0 18px 45px rgba(0,0,0,.55), inset 0 0 55px rgba(75,48,23,.17);
+  position: relative; color: var(--rdr-ink);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.wanted-frame {
+  display: inline-block; padding: 7px; background: #fff;
+  border: 4px double #382416; transform: rotate(-1.5deg);
+  margin: 0 auto .9rem;
+}
+.wanted-photo {
+  width: clamp(135px, 14vw, 185px);
+  height: clamp(135px, 14vw, 185px);
+  object-fit: cover;
+  filter: sepia(.5) contrast(1.12);
+}
+.wanted-stamp {
+  position: absolute; top: 18px; right: 18px;
+  font-family: var(--font-rdr-title); font-weight: 900;
+  color: var(--rdr-red); font-size: clamp(1.1rem, 2.2vw, 1.6rem); letter-spacing: 2px;
+  border: 3px solid var(--rdr-red); padding: 2px 10px;
+  transform: rotate(12deg); opacity: .85;
+}
+.wanted-name {
+  font-family: 'Rye', serif;
+  font-size: clamp(2rem, 3.8vw, 3.2rem);
+  letter-spacing: 3px; color: var(--rdr-ink); margin: .3rem 0;
+}
+.wanted-subtitle { font-style: italic; color: #5b4632; margin-bottom: .6rem; font-size: 1.05rem; }
+.wanted-quote {
+  font-family: var(--font-rdr-hand); font-size: clamp(1.4rem, 2.4vw, 1.75rem);
+  color: var(--rdr-red); margin: .6rem 0;
+}
+
+.honor-bar { display: flex; align-items: center; gap: .6rem; margin-top: .8rem; }
+.honor-icon { color: #b58a43; font-size: 1.15rem; }
+.honor-track {
+  flex: 1; height: 13px; background: var(--rdr-leather);
+  border: 2px solid var(--rdr-ink); border-radius: 2px; overflow: hidden;
+}
+.honor-fill {
+  height: 100%; background: linear-gradient(90deg, var(--rdr-red), var(--rdr-gold));
+  box-shadow: 0 0 8px var(--rdr-gold); transition: width .6s ease;
+}
+.honor-pct { font-size: .8rem; font-weight: 700; color: var(--rdr-ink); }
+
+.action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; }
+.action-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
+  min-height: 120px; padding: 1.1rem .8rem; border-radius: 4px;
+  background: linear-gradient(180deg, #654326, #291a10);
+  border: 1px solid #c49a4b;
+  outline: 1px solid rgba(196,154,75,.25); outline-offset: 4px;
+  color: var(--rdr-paper); font-family: var(--font-rdr-title); letter-spacing: 2px;
+  box-shadow: 0 6px 14px rgba(0,0,0,.5);
+  transition: transform .15s, box-shadow .15s;
+}
+.action-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(201,162,39,.3); }
+.action-tile i { font-size: 2.1rem; color: var(--rdr-gold); }
+.action-tile span:first-of-type { font-size: .9rem; text-transform: uppercase; }
+
+.enter-undertale {
+  display: flex; align-items: center; justify-content: center; gap: .7rem;
+  width: 100%; min-height: 58px; padding: 1rem; margin-top: 1rem;
+  background: #000; border: 3px solid var(--ut-white);
+  color: var(--ut-white); font-family: var(--font-ut); font-size: 11px;
+  letter-spacing: 2px; text-transform: uppercase;
+  transition: all .2s;
+}
+.enter-undertale:hover { border-color: var(--ut-yellow); color: var(--ut-yellow); box-shadow: 0 0 16px var(--ut-yellow); }
+.ut-heart { color: var(--ut-red); animation: heartbeat 1s infinite; }
+@keyframes heartbeat { 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
+
+.card {
+  background: var(--rdr-paper); color: var(--rdr-ink);
+  border: 3px solid var(--rdr-leather); border-left: 5px solid #8b1e1e;
+  border-radius: 4px; padding: 1.2rem;
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+}
+.card h3 { font-family: var(--font-rdr-title); color: var(--rdr-red); margin-bottom: .4rem; font-size: 1.25rem; }
+.card p { font-size: 1rem; line-height: 1.5; }
+
+/* Carrusel de imágenes */
+.carousel {
+  position: relative; background: #000;
+  border: 4px solid var(--rdr-leather); border-radius: var(--radius); overflow: hidden;
+}
+.carousel-img { width: 100%; aspect-ratio: 16/10; object-fit: cover; }
+.carousel-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(0,0,0,.65); color: var(--rdr-gold);
+  font-size: 1.6rem; display: grid; place-items: center;
+}
+.carousel-btn:first-of-type { left: 10px; }
+.carousel-btn:last-of-type { right: 10px; }
+.carousel-dots { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 7px; }
+.dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(255,255,255,.45); cursor: pointer;
+  border: 1px solid rgba(0,0,0,.5);
+}
+.dot.active { background: var(--rdr-gold); }
+
+/* Agenda semanal */
+.day-pills { display: flex; gap: .45rem; overflow-x: auto; margin-bottom: 1.1rem; padding-bottom: 4px; }
+.day-pill {
+  padding: .45rem .85rem; border-radius: 4px;
+  background: var(--rdr-leather); border: 1px solid var(--rdr-gold);
+  color: var(--rdr-paper-2); font-size: .8rem; text-transform: uppercase;
+}
+.day-pill.active { background: var(--rdr-gold); color: var(--rdr-ink); font-weight: 700; }
+.agenda-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: .9rem;
+}
+.agenda-item {
+  background: var(--rdr-paper); color: var(--rdr-ink);
+  border-left: 5px solid var(--rdr-red); padding: 1rem 1.1rem;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+.agenda-item strong { color: var(--rdr-red); font-size: .85rem; }
+.agenda-item h4 { font-family: var(--font-rdr-title); margin: .25rem 0; }
+.agenda-item p { font-size: .9rem; color: #5b4632; }
+
+/* Redes sociales y formulario accesible con etiquetas <label for="..."> */
+.social-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+.social-block {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem;
+  padding: 1.1rem .5rem; border-radius: 4px;
+  background: var(--rdr-leather); border: 2px solid var(--brand, var(--rdr-gold));
+  color: var(--rdr-paper); font-size: .78rem; text-transform: uppercase;
+  transition: all .2s;
+}
+.social-block i { font-size: 1.6rem; color: var(--brand, var(--rdr-gold)); }
+.social-block:hover { background: var(--brand, var(--rdr-gold)); color: #fff; }
+.social-block:hover i { color: #fff; }
+
+.contact-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin-top: 1rem; }
+.form-field { display: flex; flex-direction: column; gap: .3rem; }
+.form-field--full { grid-column: 1 / -1; }
+.form-field label {
+  font-family: var(--font-rdr-title);
+  font-size: .78rem;
+  color: var(--rdr-gold);
+  letter-spacing: .5px;
+}
+.contact-form input, .contact-form textarea {
+  padding: .75rem .95rem; border-radius: 4px;
+  background: var(--rdr-paper); color: var(--rdr-ink);
+  border: 2px solid var(--rdr-leather); font-family: var(--font-rdr-body); font-size: 1rem;
+}
+.contact-form button { grid-column: 1 / -1; }
+.btn {
+  padding: .75rem 1.2rem; border-radius: 4px;
+  font-family: var(--font-rdr-title); letter-spacing: 1px; text-transform: uppercase;
+  transition: all .2s;
+}
+.btn-primary { background: linear-gradient(180deg, var(--rdr-gold), #a07f1a); color: var(--rdr-ink); border: 2px solid var(--rdr-gold); font-weight: 700; }
+.btn-primary:hover { box-shadow: 0 0 16px var(--rdr-gold); }
+
+/* ============================================================
+   5. UNIVERSO UNDERTALE (PIXEL ART)
+   ============================================================ */
+[data-universe="ut"] body, body.universe-ut { background: #000; font-family: var(--font-ut-body); }
+[data-universe="ut"] .app-shell { background: #050507; border-color: rgba(255,255,255,.35); }
+[data-universe="ut"] .app-header, [data-universe="ut"] .app-dock { background: #050507; border-color: #fff; }
+[data-universe="ut"] .header-brand-text strong { color: var(--ut-yellow); font-family: var(--font-ut); font-size: .75rem; }
+[data-universe="ut"] .panel { color: var(--ut-white); }
+[data-universe="ut"] .panel-header { border-bottom: 3px solid #eee; }
+[data-universe="ut"] .panel-title h2 { color: #ffe45c; font-family: var(--font-ut); font-size: .95rem; }
+[data-universe="ut"] .dock-btn.active { background: rgba(255,255,255,.08); color: #ffe45c; box-shadow: inset 0 3px 0 #ffe45c; }
+
+.ut-dialog {
+  display: grid; grid-template-columns: 100px 1fr; gap: 1rem;
+  background: #000; border: 4px solid #f5f5f5;
+  padding: 1rem; margin-bottom: 1.2rem;
+}
+.ut-sprite {
+  width: 100px; height: 100px; border: 2px solid #aaa; background: #111;
+  display: grid; place-items: center; font-size: 2.4rem; overflow: hidden;
+}
+.ut-sprite img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.ut-text-box {
+  border: 3px solid #fff; padding: .8rem 1rem; position: relative; min-height: 110px;
+  text-align: left; width: 100%;
+}
+.ut-speaker { font-family: var(--font-ut); font-size: 10px; color: var(--ut-yellow); margin-bottom: .4rem; }
+.ut-text { font-family: var(--font-ut-body); font-size: 22px; color: var(--ut-white); line-height: 1.4; }
+.ut-arrow { position: absolute; bottom: 8px; right: 12px; color: var(--ut-white); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.ut-category-tabs {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; width: 100%;
+}
+.ut-category-tab {
+  min-height: 54px; display: flex; align-items: center; justify-content: space-between;
+  padding: .8rem 1rem; border: 3px solid #f5f5f5; background: #050507;
+  color: #ffe45c; font-family: var(--font-ut); font-size: clamp(9px, 1.3vw, 12px);
+}
+.ut-category-tab.active { border-color: #ffe45c; background: #15130a; }
+.ut-category-panels {
+  width: 100%; margin-top: 1rem; padding: 1rem;
+  border: 2px solid rgba(255,255,255,.8); background: #050507;
+}
+.ut-category-panel {
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: .9rem;
+}
+.ut-category-panel.active { display: grid; }
+.ut-category-panel[hidden] { display: none !important; }
+
+.ut-card {
+  display: grid; grid-template-columns: 68px 1fr; align-items: center; gap: .85rem;
+  background: #08080a; border: 3px solid #e9e9e9; padding: .8rem;
+  transition: transform .15s, border-color .15s;
+}
+.ut-card:hover { transform: translateY(-2px); border-color: #ffe45c; }
+.ut-card .ut-sprite { width: 68px; height: 68px; font-size: 1.8rem; }
+.ut-card h3 { font-family: var(--font-ut); font-size: 10px; color: #ffe45c; margin-bottom: .35rem; line-height: 1.5; }
+.ut-card p { font-family: var(--font-ut-body); font-size: 18px; color: #eee; line-height: 1.3; }
+
+.ut-exit {
+  display: block; width: 100%; max-width: 380px; margin: 1.4rem auto 0; padding: .9rem;
+  background: #000; border: 3px solid #fff;
+  color: #fff; font-family: var(--font-ut); font-size: 10px; text-transform: uppercase;
+}
+.ut-exit:hover { background: #fff; color: #000; }
+
+@keyframes glitch {
+  0%, 100% { filter: none; transform: none; }
+  25% { filter: invert(1) hue-rotate(90deg); transform: translateX(-2px); }
+  50% { filter: invert(0); transform: translateX(2px); }
+  75% { filter: invert(1); transform: translateX(-1px); }
+}
+body.entering-ut { animation: glitch .5s steps(2) forwards; }
+
+/* ============================================================
+   6. LAYOUT PANORÁMICO HORIZONTAL (ESCRITORIO >= 860px)
+   ============================================================ */
+@media (min-width: 860px) {
+  .app-shell {
+    width: min(calc(100% - 32px), 1440px);
+    height: calc(100dvh - 32px);
+    margin: 16px auto;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel--principal {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    grid-template-rows: 1fr auto;
+    align-items: stretch;
+    gap: 1.4rem 2.2rem;
+    padding-top: .4rem;
+  }
+  .panel--principal > .wanted-card { grid-column: 1; grid-row: 1 / 3; }
+  .panel--principal > .action-grid { grid-column: 2; grid-row: 1; margin-top: 0; }
+  .panel--principal > .enter-undertale { grid-column: 2; grid-row: 2; margin-top: 0; }
+
+  .panel--split-media {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr;
+    align-items: center;
+    gap: 1.4rem 2rem;
+  }
+  .panel--split-media > .panel-header { grid-column: 1 / -1; margin-bottom: 0; }
+  .panel--split-media > .card { height: 100%; display: flex; flex-direction: column; justify-content: center; padding: 1.8rem; }
+
+  .panel--redes {
+    display: grid;
+    grid-template-columns: 0.95fr 1.05fr;
+    align-items: start;
+    gap: 1.4rem 2rem;
+  }
+  .panel--redes > .panel-header { grid-column: 1 / -1; margin-bottom: 0; }
+  .panel--redes > .contact-form { margin-top: 0; }
+}
+
+@media (max-width: 859px) {
+  .ut-category-tabs { grid-template-columns: 1fr; gap: .6rem; }
+  .contact-form { grid-template-columns: 1fr; }
+  .carousel-img { aspect-ratio: 4/3; }
+  .hide-mobile { display: none; }
+}
+
+/* ============================================================
+   7. TOAST Y DIÁLOGOS MODALES
+   ============================================================ */
+.toast {
+  position: fixed; bottom: calc(var(--dock-h) + 12px); left: 50%;
+  transform: translateX(-50%); z-index: 200;
+  display: flex; align-items: center; gap: .5rem;
+  padding: .7rem 1.2rem; border-radius: var(--radius);
+  background: var(--rdr-leather); border: 2px solid var(--rdr-gold);
+  color: var(--rdr-paper); font-size: .85rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.6);
+}
+.dialog {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(4px); padding: 1rem;
+}
+.dialog[hidden] { display: none; }
+.dialog-card {
+  width: 100%; max-width: 420px;
+  background: var(--rdr-paper); color: var(--rdr-ink);
+  border: 6px solid var(--rdr-leather); border-radius: var(--radius); padding: 1.2rem;
+}
+.dialog-head { display: flex; align-items: center; gap: .8rem; margin-bottom: 1rem; }
+.dialog-head h2 { font-family: var(--font-rdr-title); color: var(--rdr-red); font-size: 1.1rem; flex: 1; }
+
+/* ============================================================
+   8. ESTILOS TEMA CLARO (RDR2 + UNDERGROUND)
+   ============================================================ */
+[data-theme="light"] body,
+[data-theme="light"] .app-main {
+  background-color: #e8dfcf;
+  color: #2b1d12;
+}
+[data-theme="light"] .panel--principal .wanted-card {
+  background-color: #f1e4c9;
+  color: #2b1d12;
+  border-color: #5b3824;
+  outline-color: #9a6a19;
+}
+[data-theme="light"] .panel--principal .wanted-name,
+[data-theme="light"] .panel--principal .wanted-subtitle,
+[data-theme="light"] .panel--principal .honor-pct {
+  color: #2b1d12;
+}
+[data-theme="light"] .panel--principal .wanted-quote,
+[data-theme="light"] .panel--principal .wanted-stamp {
+  color: #8b1e1e;
+}
+[data-theme="light"] .panel--principal .action-tile {
+  background: linear-gradient(180deg, #f4e5c8, #d8bd91);
+  border-color: #8b642d;
+  color: #2b1d12;
+  box-shadow: 0 5px 13px rgba(50, 32, 15, .22);
+}
+[data-theme="light"] .panel--principal .action-tile i {
+  color: #805515;
+}
+[data-theme="light"] .panel--principal .enter-undertale {
+  background: #171717;
+  border-color: #343434;
+  color: #fff;
+}
+[data-theme="light"] .app-header,
+[data-theme="light"] .app-dock {
+  background: linear-gradient(180deg, #ead9b9, #c9a979);
+  border-color: #805b2d;
+}
+[data-theme="light"] .header-brand-text strong,
+[data-theme="light"] .header-brand-text small,
+[data-theme="light"] .dock-btn,
+[data-theme="light"] .tool-pill-btn {
+  color: #382416;
+}
+[data-theme="light"] .btn-icon {
+  color: #382416;
+  background: rgba(255,255,255,.35);
+  border-color: rgba(91,56,36,.5);
+}
+[data-theme="light"] .dock-btn.active,
+[data-theme="light"] .dock-btn:hover {
+  background: linear-gradient(180deg, #8b642d, #68451f);
+  color: #fff8e9;
+}
+[data-theme="light"] .panel-title small { color: #59452d; }
+[data-theme="light"] .form-field label { color: #5b3824; }
+[data-theme="light"] .panel--split-media > .card {
+  background: #f4e8dc;
+  color: #2b1d12;
+  border-color: #3b2a1a;
+}
+[data-theme="light"] .panel--split-media > .card h3 { color: #8b1e1e; }
+[data-theme="light"] .panel--split-media > .card p { color: #2b1d12; }
+
+/* Underground en tema claro */
+[data-theme="light"][data-universe="ut"] body,
+[data-theme="light"] body.universe-ut {
+  background: #e9e9e9;
+}
+[data-theme="light"][data-universe="ut"] .app-shell,
+[data-theme="light"][data-universe="ut"] .app-main,
+[data-theme="light"][data-universe="ut"] .panel-host {
+  background: #e9e9e9;
+}
+[data-theme="light"][data-universe="ut"] .app-header,
+[data-theme="light"][data-universe="ut"] .app-dock {
+  background: #dedede;
+  border-color: #333;
+}
+[data-theme="light"][data-universe="ut"] .header-brand-text strong,
+[data-theme="light"][data-universe="ut"] .header-brand-text small,
+[data-theme="light"][data-universe="ut"] .dock-btn {
+  color: #202020;
+}
+[data-theme="light"][data-universe="ut"] .panel,
+[data-theme="light"][data-universe="ut"] .panel-title h2 {
+  color: #202020;
+}
+[data-theme="light"][data-universe="ut"] .panel-header { border-bottom-color: #333; }
+[data-theme="light"][data-universe="ut"] .ut-dialog { background: #f7f7f7; border-color: #333; }
+[data-theme="light"][data-universe="ut"] .ut-sprite { background: #dedede; border-color: #555; }
+[data-theme="light"][data-universe="ut"] .ut-text-box { background: #fff; border-color: #333; }
+[data-theme="light"][data-universe="ut"] .ut-speaker,
+[data-theme="light"][data-universe="ut"] .ut-text,
+[data-theme="light"][data-universe="ut"] .ut-arrow { color: #222; }
+[data-theme="light"][data-universe="ut"] .ut-category-panels { background: #f7f7f7; border-color: #444; }
+[data-theme="light"][data-universe="ut"] .ut-category-tab { background: #fff; color: #765900; border-color: #333; }
+[data-theme="light"][data-universe="ut"] .ut-category-tab.active { background: #fff4bf; color: #594300; border-color: #9a7900; }
+[data-theme="light"][data-universe="ut"] .ut-card { background: #fff; border-color: #555; }
+[data-theme="light"][data-universe="ut"] .ut-card h3 { color: #765900; }
+[data-theme="light"][data-universe="ut"] .ut-card p { color: #222; }
+[data-theme="light"][data-universe="ut"] .ut-exit { background: #fff; color: #222; border-color: #333; }
+[data-theme="light"][data-universe="ut"] .ut-exit:hover { background: #222; color: #fff; }
+[data-theme="light"][data-universe="ut"] .dock-btn.active,
+[data-theme="light"][data-universe="ut"] .dock-btn:hover {
+  background: #d5d5d5;
+  color: #765900;
+  box-shadow: inset 0 3px 0 #9a7900;
+}
+
+/* ============================================================
+   9. MÓDULO DE SIMULACIÓN DE ALTO CONTRASTE WCAG (GUÍA PARTE 1)
+   ============================================================ */
+body.alto-contraste,
+body.alto-contraste .app-shell,
+body.alto-contraste .app-main,
+body.alto-contraste .panel-host,
+body.alto-contraste .app-header,
+body.alto-contraste .app-dock,
+body.alto-contraste .app-drawer,
+body.alto-contraste .panel-auditoria {
+  background: #000000 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border-color: #facc15 !important;
+}
+
+body.alto-contraste::before {
+  display: none !important;
+}
+
+body.alto-contraste .wanted-card,
+body.alto-contraste .card,
+body.alto-contraste .agenda-item,
+body.alto-contraste .action-tile,
+body.alto-contraste .social-block,
+body.alto-contraste .ut-dialog,
+body.alto-contraste .ut-text-box,
+body.alto-contraste .ut-category-panels,
+body.alto-contraste .ut-category-tab,
+body.alto-contraste .ut-card,
+body.alto-contraste .dialog-card,
+body.alto-contraste .contact-rail,
+body.alto-contraste .contact-rail-link {
+  background: #111827 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border: 2px solid #facc15 !important;
+  outline: none !important;
+}
+
+body.alto-contraste h1,
+body.alto-contraste h2,
+body.alto-contraste h3,
+body.alto-contraste h4,
+body.alto-contraste strong,
+body.alto-contraste label,
+body.alto-contraste .wanted-name,
+body.alto-contraste .wanted-stamp,
+body.alto-contraste .wanted-quote,
+body.alto-contraste .panel-title i,
+body.alto-contraste .action-tile i,
+body.alto-contraste .social-block i,
+body.alto-contraste .ut-speaker {
+  color: #facc15 !important;
+}
+
+body.alto-contraste p,
+body.alto-contraste small,
+body.alto-contraste span,
+body.alto-contraste .dock-btn,
+body.alto-contraste .day-pill,
+body.alto-contraste .btn-icon,
+body.alto-contraste #salidaAudit {
+  color: #ffffff !important;
+}
+
+body.alto-contraste .dock-btn.active,
+body.alto-contraste .day-pill.active,
+body.alto-contraste .ut-category-tab.active,
+body.alto-contraste .btn-primary,
+body.alto-contraste .tool-pill-btn[aria-pressed="true"] {
+  background: #facc15 !important;
+  color: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+body.alto-contraste .dock-btn.active span,
+body.alto-contraste .dock-btn.active i,
+body.alto-contraste .tool-pill-btn[aria-pressed="true"] span,
+body.alto-contraste .tool-pill-btn[aria-pressed="true"] i {
+  color: #000000 !important;
+}
+
+body.alto-contraste input,
+body.alto-contraste textarea {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #facc15 !important;
+}
+
+body.alto-contraste :focus-visible {
+  outline: 3px solid #38bdf8 !important;
+  outline-offset: 3px !important;
+}
+</style>
+</head>
+
+<body class="universe-rdr" data-device="desktop">
+<script>if (window.innerWidth <= 768 || /Android|iPhone|iPad/i.test(navigator.userAgent)) document.body.dataset.device = "mobile";</script>
+
+<!-- Enlace accesible para saltar directamente al contenido principal con Tab -->
+<a href="#mainViewport" class="skip-link">Saltar al contenido principal</a>
+
+<!-- ============================================================
+     CONTENEDOR PRINCIPAL DE LA APLICACIÓN (APP SHELL ÚNICO)
+     ============================================================ -->
+<div class="app-shell app-shell--portfolio" id="appShell">
+
+  <!-- Cabecera superior -->
+  <header class="app-header app-shell__header" role="banner">
+    <button type="button" class="header-brand" data-action="navigate" data-panel="principal" data-hydratable aria-label="Ir a Inicio">
+      <img src="https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg" alt="Fotografía de perfil de Aler" class="header-avatar" width="42" height="42" loading="lazy" data-fallback="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" />
+      <span class="header-brand-text">
+        <strong>Aler</strong>
+        <small>Portafolio</small>
+      </span>
+      <span class="hydrate-dot" data-hydrate-target="principal" title="Rehidratar Inicio" aria-hidden="true">⚡</span>
+    </button>
+
+    <div class="header-actions">
+      <!-- Botón Simulación Alto Contraste (Guía Parte 1 - a11y WCAG) -->
+      <button type="button" id="btnSimularContraste" class="tool-pill-btn" aria-pressed="false" aria-label="Simular Alto Contraste WCAG">
+        <i class="bi bi-circle-half" aria-hidden="true"></i>
+        <span class="hide-mobile">Alto Contraste</span>
+      </button>
+
+      <!-- Botón Instalar PWA (Guía Responsivo y PWA) -->
+      <button type="button" id="btnInstalarPWA" class="tool-pill-btn tool-pill-btn--install" hidden aria-label="Instalar aplicación PWA">
+        <i class="bi bi-download" aria-hidden="true"></i>
+        <span>Instalar App</span>
+      </button>
+
+      <span id="netStatus" class="net-badge" role="status" aria-live="polite">🟢 En línea</span>
+      <button type="button" id="btnTheme" class="btn-icon" data-action="theme" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+      <button type="button" id="btnMenu" class="btn-icon" data-action="open-menu" title="Menú" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="navMenu">☰</button>
+    </div>
+  </header>
+
+  <!-- Módulo Independiente: Panel de Simulación de Smoke Test del DOM (Guía Parte 2) -->
+  <section class="panel-auditoria" aria-label="Auditoría rápida y Smoke Test del DOM">
+    <div class="panel-auditoria-controls">
+      <button type="button" id="btnSmokeTest" class="btn-smoke">
+        <i class="bi bi-shield-check" aria-hidden="true"></i> Ejecutar Smoke Test DOM
+      </button>
+    </div>
+    <p id="salidaAudit" role="status" aria-live="polite">Estado: Listo para verificar.</p>
+  </section>
+
+  <!-- Menú lateral desplegable (Drawer) -->
+  <nav id="navMenu" class="app-drawer" aria-hidden="true" aria-label="Navegación principal">
+    <div class="drawer-head">
+      <strong>Navegación</strong>
+      <button type="button" class="btn-icon" data-action="close-menu" aria-label="Cerrar menú">✕</button>
+    </div>
+    <ul class="drawer-list">
+      <li><button type="button" data-action="navigate" data-panel="principal"><i class="bi bi-house-door-fill" aria-hidden="true"></i> Inicio</button></li>
+      <li><button type="button" data-action="navigate" data-panel="fotos"><i class="bi bi-images" aria-hidden="true"></i> Fotos</button></li>
+      <li><button type="button" data-action="navigate" data-panel="agenda"><i class="bi bi-calendar3" aria-hidden="true"></i> Agenda</button></li>
+      <li><button type="button" data-action="navigate" data-panel="frases"><i class="bi bi-quote" aria-hidden="true"></i> Frases</button></li>
+      <li><button type="button" data-action="navigate" data-panel="redes"><i class="bi bi-share-fill" aria-hidden="true"></i> Redes</button></li>
+      <li><button type="button" data-action="enter-undertale"><i class="bi bi-heart-fill" style="color:var(--ut-red)" aria-hidden="true"></i> Underground</button></li>
+    </ul>
+  </nav>
+  <div id="drawerBackdrop" class="drawer-backdrop" hidden></div>
+
+  <!-- Riel lateral de contacto rápido -->
+  <aside id="contactRail" class="contact-rail" aria-label="Redes de contacto rápido">
+    <button type="button" id="contactRailToggle" class="contact-rail-toggle" aria-expanded="false" aria-label="Mostrar u ocultar contactos rápidos">◀</button>
+    <div class="contact-rail-list">
+      <a class="contact-rail-link" href="https://www.instagram.com/___aler__._._/" target="_blank" rel="noopener noreferrer" aria-label="Abrir perfil de Instagram de Aler">
+        <i class="bi bi-instagram" style="color:#fff;background:linear-gradient(35deg,#ff9a35,#e1306c,#8a3ab9)" aria-hidden="true"></i>
+        <span><strong>INSTAGRAM</strong><small>@___aler__._._/</small><em>En línea</em></span>
+      </a>
+      <a class="contact-rail-link" href="https://github.com/tojial" target="_blank" rel="noopener noreferrer" aria-label="Abrir perfil de GitHub de Aler">
+        <i class="bi bi-github" style="color:#fff" aria-hidden="true"></i>
+        <span><strong>GITHUB</strong><small>@tojial</small><em>↗ Repositorios</em></span>
+      </a>
+      <a class="contact-rail-link" href="https://wa.me/?text=Hola%2C%20quiero%20ponerme%20en%20contacto" target="_blank" rel="noopener noreferrer" aria-label="Enviar mensaje por WhatsApp">
+        <i class="bi bi-whatsapp" style="color:#fff;background:#20c96b" aria-hidden="true"></i>
+        <span><strong>WHATSAPP</strong><small>Misiva directa</small><em>Disponible</em></span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Cuerpo adaptable (Flexbox column en portrait / Flexbox row en landscape o escritorio) -->
+  <div class="app-body">
+    <!-- Área central donde se renderiza cada sección -->
+    <main id="mainViewport" class="app-main" role="main" tabindex="-1">
+      <div id="panelHost" class="panel-host" aria-live="polite"></div>
+      <div id="panelLoader" class="panel-loader" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <span>Cargando…</span>
+      </div>
+    </main>
+
+    <!-- Barra de navegación rápida (Dock): abajo en celular vertical, izquierda en horizontal/PC -->
+    <nav class="app-dock" role="navigation" aria-label="Accesos rápidos">
+      <button type="button" class="dock-btn active" data-action="navigate" data-panel="principal" aria-label="Ir a Inicio">
+        <i class="bi bi-house-door-fill" aria-hidden="true"></i>
+        <span>Inicio</span>
+      </button>
+      <button type="button" class="dock-btn" data-action="navigate" data-panel="fotos" aria-label="Ir a Fotos">
+        <i class="bi bi-images" aria-hidden="true"></i>
+        <span>Fotos</span>
+      </button>
+      <button type="button" class="dock-btn" data-action="navigate" data-panel="agenda" aria-label="Ir a Agenda">
+        <i class="bi bi-calendar3" aria-hidden="true"></i>
+        <span>Agenda</span>
+      </button>
+      <button type="button" class="dock-btn" data-action="navigate" data-panel="redes" aria-label="Ir a Redes">
+        <i class="bi bi-person-fill" aria-hidden="true"></i>
+        <span>Redes</span>
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- Notificación flotante temporal (Toast) -->
+<div id="toast" class="toast" role="status" aria-live="assertive" hidden>
+  <i id="toastIcon" class="bi bi-info-circle-fill" aria-hidden="true"></i>
+  <span id="toastMsg"></span>
+</div>
+
+<!-- Modal genérico -->
+<div id="modal" class="dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+  <div class="dialog-card">
+    <div class="dialog-head">
+      <h2 id="modalTitle">Título</h2>
+      <button type="button" class="btn-icon" data-action="close-modal" aria-label="Cerrar ventana modal">✕</button>
+    </div>
+    <div id="modalBody" class="dialog-body"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   BASE DE DATOS EN MEMORIA DE LA APLICACIÓN (DATA)
+   ============================================================ */
+const FALLBACK_AVATAR = "https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg";
+const FALLBACK_CARD   = "https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg";
+
+const DATA = {
+  principal: {
+    avatar: "https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg",
+    nombre: "ALER",
+    titulo: "Estudiante de Ingeniería de Sistemas",
+    frase: "Hacer lo imposible posible.",
+    progreso: 80,
+    progresoLabel: "En constante evolución…",
+    acciones: [
+      { panel: "fotos",    icon: "bi-images",     label: "Fotos" },
+      { panel: "agenda",   icon: "bi-calendar3",  label: "Agenda" },
+      { panel: "frases",   icon: "bi-quote",      label: "Frases" },
+      { panel: "redes",    icon: "bi-share-fill", label: "Redes" }
+    ]
+  },
+
+  fotos: {
+    fotos: [
+      { src: "https://i.pinimg.com/736x/61/bb/19/61bb1993c24a5c35c67c0980e7313e67.jpg", alt: "Retrato oficial de presentación de Aler",          title: "Mi Perfil Oficial",   sub: "Fotografía de presentación." },
+      { src: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=900",       alt: "Taza de café sobre mesa durante sesión de estudio", title: "Café & Enfoque",      sub: "Momentos de concentración." },
+      { src: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=900",       alt: "Ambiente musical e instrumentos en estudio",        title: "Momentos Especiales", sub: "Recuerdos que valen." },
+      { src: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=900",       alt: "Paisaje de carretera y horizonte durante un viaje", title: "Viajes",              sub: "Explorando nuevos lugares." },
+      { src: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=900",       alt: "Pinceles y paleta artística representando estilo",  title: "Estilo & Arte",       sub: "Expresión personal." }
+    ]
+  },
+
+  agenda: {
+    actividades: [
+      { day: "lun", time: "08:00", title: "Clases UPDS",    desc: "Ingeniería de Sistemas" },
+      { day: "lun", time: "14:00", title: "Tareas",         desc: "Bases de datos y proyectos" },
+      { day: "lun", time: "20:00", title: "GYM",            desc: "Entrenamiento PowerLifting" },
+      { day: "mar", time: "08:00", title: "Clases UPDS",    desc: "Programación" },
+      { day: "mar", time: "18:00", title: "Desarrollo Web", desc: "PWA y proyectos personales" },
+      { day: "mie", time: "08:00", title: "Clases UPDS",    desc: "Redes y sistemas" },
+      { day: "jue", time: "08:00", title: "Clases UPDS",    desc: "Algoritmos" },
+      { day: "vie", time: "20:00", title: "Gaming",         desc: "Con lo vagooo" },
+      { day: "sab", time: "10:00", title: "GYM",            desc: "Rutina pesada" },
+      { day: "dom", time: "12:00", title: "Descanso",       desc: "Series y música" }
+    ]
+  },
+
+  frases: {
+    frases: [
+      { src: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=900", alt: "Montañas escarpadas simbolizando hacer lo imposible posible", title: "Hacer lo imposible posible", desc: "No rendirte contra nada." },
+      { src: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=900", alt: "Cielo estrellado sobre cumbre nevada representando determinación", title: "Determinación",              desc: "A pesar de todo no te rindas." },
+      { src: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900", alt: "Horizonte oceánico al amanecer simbolizando superación personal", title: "Superación de uno mismo",    desc: "Ser mejor cada día y no cometer los mismos errores." }
+    ]
+  },
+
+  redes: {
+    social: [
+      { url: "https://www.instagram.com/___aler__._._/", icon: "bi-instagram", label: "Instagram", color: "#e1306c" },
+      { url: "https://www.tiktok.com/@aler_____?is_from_webapp=1&sender_device=pc", icon: "bi-tiktok", label: "TikTok", color: "#fff" },
+      { url: "https://www.youtube.com/@ElALERGAMER", icon: "bi-youtube", label: "YouTube", color: "#ff0000" },
+      { url: "https://discord.gg/SGADmA979", icon: "bi-discord", label: "Discord", color: "#5865f2" },
+      { url: "https://github.com/tojial", icon: "bi-github", label: "GitHub", color: "#fff" },
+      { url: "https://open.spotify.com/user/313ox7kjpjdemiv7jbhmschwxxm4?si=be553b3710344b54", icon: "bi-spotify", label: "Spotify", color: "#1db954" }
+    ]
+  },
+
+  undertale: {
+    dialogo: {
+      speaker: "SANS",
+      sprite: "https://media1.tenor.com/m/mF8rKZ86h44AAAAd/sans-last-breath.gif",
+      fallbackSprite: FALLBACK_CARD,
+      fallbackEmoji: "💀",
+      lineas: [
+        "* heya. bienvenido al underground de aler.",
+        "* aquí encontrarás las cosas que me gustan.",
+        "* hace un hermoso dia afuera"
+      ]
+    },
+    animes: [
+      { img: "https://i.pinimg.com/736x/ee/f1/8d/eef18df6a4054c5b66ef0f971b4aeb77.jpg", emoji: "🪚", title: "CHAINSAW MAN", desc: "Denji, un joven cazador de demonios, se fusiona con su perro motosierra para vengarse y cumplir sus sueños." },
+      { img: "https://i.pinimg.com/736x/18/0a/6f/180a6f14a058ab91b37de483bb023890.jpg", emoji: "🤞", title: "JUJUTSU KAISEN", desc: "Yuji Itadori se une a los hechiceros de jujutsu para combatir maldiciones tras convertirse en el recipiente de Sukuna." },
+      { img: "https://i.pinimg.com/1200x/c6/db/1c/c6db1ce4ee68d9eeb1e5787077f50cec.jpg", emoji: "⚔️", title: "SOLO LEVELING", desc: "Sung Jinwoo, el cazador más débil, obtiene un sistema que le permite subir de nivel sin límites." },
+      { img: "https://i.pinimg.com/1200x/1f/a1/b0/1fa1b0d97db380c812018c8b0ec8b617.jpg", emoji: "🛡️", title: "RECORD OF RAGNAROK", desc: "13 dioses vs 13 humanos en un torneo por el destino de la humanidad. Combates épicos." },
+      { img: "https://i.pinimg.com/736x/4c/0f/28/4c0f28375af651a6533cd253c9ea786c.jpg", emoji: "🧊", title: "ROMPIENDO EL HIELO", desc: "Un viaje de superación y determinación en un mundo congelado. La lucha por sobrevivir." }
+    ],
+    juegos: [
+      { img: "https://upload.wikimedia.org/wikipedia/en/4/44/Red_Dead_Redemption_II.jpg", emoji: "🤠", title: "RED DEAD REDEMPTION 2", desc: "La obra maestra de Rockstar: mundo abierto, honor y redención en el salvaje oeste." },
+      { img: "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1422450/header.jpg", emoji: "🔫", title: "DEADLOCK", desc: "Shooter de héroes 6v6 de Valve con estética noir y mucha movilidad." },
+      { img: "https://i.pinimg.com/1200x/f2/6c/34/f26c34120385a4d582070cf649a91dec.jpg", emoji: "🏍️", title: "DAYS GONE", desc: "Supervivencia zombi en moto, con un mundo abierto hostil y humano." },
+      { img: "https://i.pinimg.com/736x/cd/cc/39/cdcc39c71c42ceafe34ad08e5b324ab5.jpg", emoji: "🛸", title: "STARCRAFT 2", desc: "El RTS competitivo por excelencia: Terran, Zerg y Protoss en equilibrio." },
+      { img: "https://i.pinimg.com/1200x/6e/ab/8e/6eab8e3543fe3668d2068e36562e97d3.jpg", emoji: "❤️", title: "UNDERTALE", desc: "RPG indie donde puedes perdonar a todos. El corazón y la DETERMINACIÓN." }
+    ],
+    pasatiempos: [
+      { emoji: "🏋️", title: "GYM",    desc: "Entrenamiento pa estar más fuerte." },
+      { emoji: "🎮", title: "GAMING", desc: "Con amigos aprendiendo más cosas." },
+      { emoji: "🎧", title: "MÚSICA", desc: "Mi pasatiempo más común para relajarme." }
+    ]
+  }
+};
+</script>
+
+<script type="module">
+/* ============================================================
+   1. MÓDULO INDEPENDIENTE: ACCESIBILIDAD Y ALTO CONTRASTE (PARTE 1)
+   ============================================================ */
+const btnContraste = document.getElementById('btnSimularContraste');
+if (btnContraste) {
+  btnContraste.addEventListener('click', () => {
+    const activo = document.body.classList.toggle('alto-contraste');
+    btnContraste.setAttribute('aria-pressed', String(activo));
+    toast(activo ? 'Simulación Alto Contraste WCAG activada' : 'Simulación Alto Contraste desactivada', 'info');
+  });
+}
+
+/* ============================================================
+   2. MÓDULO INDEPENDIENTE: SMOKE TEST DEL DOM (PARTE 2)
+   ============================================================ */
+const btnSmoke = document.getElementById('btnSmokeTest');
+const salidaAudit = document.getElementById('salidaAudit');
+
+function ejecutarSmokeTestDOM() {
+  const imgs = document.querySelectorAll('img');
+  const imgsSinAlt = document.querySelectorAll('img:not([alt]), img[alt=""]').length;
+  const enlacesVacios = document.querySelectorAll('a[href=""], a:not([href])').length;
+  const botones = document.querySelectorAll('button').length;
+  const inputs = document.querySelectorAll('input, textarea, select');
+  let inputsSinLabel = 0;
+  inputs.forEach(inp => {
+    if (!inp.id || !document.querySelector(`label[for="${inp.id}"]`)) inputsSinLabel++;
+  });
+
+  const ok = imgsSinAlt === 0 && enlacesVacios === 0 && inputsSinLabel === 0;
+  const prefijo = ok ? '✅ Smoke Test OK' : '⚠️ Smoke Test con observaciones';
+  if (salidaAudit) {
+    salidaAudit.textContent =
+      `${prefijo} — Botones: ${botones} | Imágenes: ${imgs.length} (sin alt: ${imgsSinAlt}) | Enlaces vacíos: ${enlacesVacios} | Inputs sin label: ${inputsSinLabel}`;
+  }
+}
+
+if (btnSmoke) {
+  btnSmoke.addEventListener('click', ejecutarSmokeTestDOM);
+}
+
+/* ============================================================
+   3. CONTROLADOR PWA (SERVICE WORKER + INSTALACIÓN + RED)
+   ============================================================ */
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  const swCode = `
+    const CACHE_NAME = 'aler-pwa-v2';
+    const APP_URL = self.registration.scope;
+
+    self.addEventListener('install', (event) => {
+      event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => cache.addAll([APP_URL]).catch(() => {}))
+      );
+      self.skipWaiting();
+    });
+
+    self.addEventListener('activate', (event) => {
+      event.waitUntil(
+        caches.keys().then((keys) =>
+          Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+        )
+      );
+      self.clients.claim();
+    });
+
+    self.addEventListener('fetch', (event) => {
+      if (event.request.method !== 'GET') return;
+      event.respondWith(
+        caches.match(event.request).then((cached) => {
+          const networkFetch = fetch(event.request)
+            .then((response) => {
+              if (response && response.status === 200) {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+              }
+              return response;
+            })
+            .catch(() => cached);
+          return cached || networkFetch;
+        })
+      );
+    });
+  `;
+
+  try {
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(() => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  } catch (e) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
+let eventoInstalacion = null;
+const btnInstalar = document.getElementById('btnInstalarPWA');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  eventoInstalacion = e;
+  if (btnInstalar) btnInstalar.hidden = false;
+});
+
+if (btnInstalar) {
+  btnInstalar.addEventListener('click', async () => {
+    if (!eventoInstalacion) return;
+    eventoInstalacion.prompt();
+    const { outcome } = await eventoInstalacion.userChoice;
+    if (outcome === 'accepted') {
+      toast('¡Aplicación instalada en tu dispositivo!', 'success');
+    }
+    eventoInstalacion = null;
+    btnInstalar.hidden = true;
+  });
+}
+
+window.addEventListener('appinstalled', () => {
+  eventoInstalacion = null;
+  if (btnInstalar) btnInstalar.hidden = true;
+  toast('PWA instalada correctamente', 'success');
+});
+
+function updateNetworkStatus() {
+  const badge = document.getElementById('netStatus');
+  if (!badge) return;
+  const isOnline = navigator.onLine;
+  badge.textContent = isOnline ? '🟢 En línea' : '🔴 Sin conexión';
+  badge.classList.toggle('offline', !isOnline);
+}
+window.addEventListener('online', () => {
+  updateNetworkStatus();
+  toast('Conexión restablecida', 'success');
+});
+window.addEventListener('offline', () => {
+  updateNetworkStatus();
+  toast('Modo sin conexión (caché PWA activo)', 'info');
+});
+updateNetworkStatus();
+
+/* ============================================================
+   4. CONTROLADOR DE INTERFAZ, NAVEGACIÓN Y RENDERIZADO
+   ============================================================ */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const esc = (s = '') => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+document.addEventListener('error', (event) => {
+  const img = event.target;
+  if (!(img instanceof HTMLImageElement)) return;
+  if (img.dataset.hideOnError === 'true') { img.hidden = true; return; }
+  const fallback = img.dataset.fallback;
+  if (fallback && !img.dataset.fallbackUsed) {
+    img.dataset.fallbackUsed = 'true';
+    img.src = fallback;
+    return;
+  }
+  if (img.dataset.fallbackText && img.parentElement) {
+    img.parentElement.textContent = img.dataset.fallbackText;
+  }
+}, true);
+
+function renderSprite(item, fallbackUrl = FALLBACK_CARD) {
+  if (item.img) {
+    return `<img src="${esc(item.img)}" alt="Portada de ${esc(item.title)}" loading="lazy" data-fallback="${esc(fallbackUrl)}" data-fallback-text="${esc(item.emoji || '⭐')}" />`;
+  }
+  return `<span aria-hidden="true">${esc(item.emoji || '⭐')}</span>`;
+}
+
+const VALID_PANELS = ['principal','fotos','agenda','frases','redes','undertale'];
+
+let toastTimer;
+function toast(msg, type = 'info') {
+  const t = $('#toast');
+  $('#toastMsg').textContent = msg;
+  $('#toastIcon').className = `bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-info-circle-fill'}`;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+}
+
+function applyTheme(theme) {
+  const next = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  const btn = $('#btnTheme');
+  if (btn) {
+    btn.textContent = next === 'light' ? '☀️' : '🌙';
+    btn.title = next === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+    btn.setAttribute('aria-label', btn.title);
+  }
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try { localStorage.setItem('theme', next); } catch (e) {}
+}
+applyTheme((() => { try { return localStorage.getItem('theme') || 'dark'; } catch (e) { return 'dark'; } })());
+
+const drawer = $('#navMenu');
+const backdrop = $('#drawerBackdrop');
+const btnMenu = $('#btnMenu');
+function toggleMenu(open) {
+  drawer.classList.toggle('open', open);
+  drawer.setAttribute('aria-hidden', String(!open));
+  btnMenu.setAttribute('aria-expanded', String(open));
+  backdrop.hidden = !open;
+}
+
+let currentPanel = null;
+function navigate(panel, { replace = false } = {}) {
+  if (!VALID_PANELS.includes(panel)) panel = 'principal';
+  if (panel === currentPanel) return;
+  currentPanel = panel;
+  const hash = `#/${panel}`;
+  if (replace) history.replaceState(null, '', hash);
+  else history.pushState(null, '', hash);
+
+  $$('.dock-btn').forEach(b => b.classList.toggle('active', b.dataset.panel === panel));
+  $$('.drawer-list button[data-panel]').forEach(b => b.classList.toggle('active', b.dataset.panel === panel));
+  renderPanel(panel);
+  toggleMenu(false);
+}
+window.addEventListener('hashchange', () => {
+  const p = location.hash.slice(2) || 'principal';
+  if (VALID_PANELS.includes(p) && p !== currentPanel) navigate(p);
+});
+
+function panelHeader(icon, title, sub, backPanel = 'principal') {
+  return `
+    <header class="panel-header">
+      <button type="button" class="btn-icon" data-action="navigate" data-panel="${backPanel}" aria-label="Volver a Inicio">←</button>
+      <div class="panel-title">
+        <i class="bi ${icon}" aria-hidden="true"></i>
+        <h2>${esc(title)}</h2>
+        <small>${esc(sub)}</small>
+      </div>
+      <span style="width:40px" aria-hidden="true"></span>
+    </header>`;
+}
+
+const host = $('#panelHost');
+let renderTimer = null;
+function renderPanel(panel) {
+  if (renderTimer) clearTimeout(renderTimer);
+  const loader = $('#panelLoader');
+  loader.hidden = false;
+
+  host.classList.toggle('is-undertale', panel === 'undertale');
+  host.scrollTop = 0;
+  host.innerHTML = '';
+
+  renderTimer = setTimeout(() => {
+    let html = '';
+    switch (panel) {
+      case 'principal': html = renderPrincipal(DATA.principal); break;
+      case 'fotos':     html = renderFotos(DATA.fotos); break;
+      case 'agenda':    html = renderAgenda(DATA.agenda); break;
+      case 'frases':    html = renderFrases(DATA.frases); break;
+      case 'redes':     html = renderRedes(DATA.redes); break;
+      case 'undertale': html = renderUndertale(DATA.undertale); break;
+    }
+    host.innerHTML = window.DOMPurify
+      ? DOMPurify.sanitize(html, {
+          ADD_ATTR: [
+            'data-action','data-panel','data-day','data-index','data-target',
+            'data-fallback','data-fallback-text','data-fallback-used',
+            'aria-label','aria-hidden','aria-pressed','aria-selected',
+            'loading','width','height','style','target','rel','href','src','alt','role','for','id','name','type','rows','required','placeholder'
+          ]
+        })
+      : html;
+    loader.hidden = true;
+
+    const isUT = panel === 'undertale';
+    document.documentElement.setAttribute('data-universe', isUT ? 'ut' : 'rdr');
+    document.body.classList.toggle('universe-ut', isUT);
+    document.body.classList.toggle('universe-rdr', !isUT);
+
+    setupInteractivity(panel);
+  }, 100);
+}
+
+/* --- Plantillas HTML Semánticas de cada panel (<article>, <button>, <label for>) --- */
+function renderPrincipal(d) {
+  return `
+    <section class="panel panel--principal" aria-label="Presentación principal">
+      <article class="wanted-card">
+        <div class="wanted-stamp">WANTED</div>
+        <div class="wanted-frame">
+          <img src="${esc(d.avatar)}" alt="Fotografía estilo cartel western de ${esc(d.nombre)}" class="wanted-photo" width="185" height="185" data-fallback="${esc(FALLBACK_AVATAR)}" />
+        </div>
+        <h1 class="wanted-name">${esc(d.nombre)}</h1>
+        <p class="wanted-subtitle">${esc(d.titulo)}</p>
+        <p class="wanted-quote">“${esc(d.frase)}”</p>
+        <div class="honor-bar" role="progressbar" aria-valuenow="${d.progreso}" aria-valuemin="0" aria-valuemax="100" aria-label="Nivel de evolución profesional">
+          <span class="honor-icon" aria-hidden="true">★</span>
+          <div class="honor-track"><div class="honor-fill" style="width:${d.progreso}%"></div></div>
+          <span class="honor-pct">${d.progreso}%</span>
+        </div>
+        <p style="margin-top:.5rem;font-size:.82rem;color:#6e563f;font-style:italic">${esc(d.progresoLabel)}</p>
+      </article>
+
+      <div class="action-grid" role="group" aria-label="Secciones del portafolio">
+        ${d.acciones.map(a => `
+          <button type="button" class="action-tile" data-action="navigate" data-panel="${esc(a.panel)}">
+            <i class="bi ${esc(a.icon)}" aria-hidden="true"></i>
+            <span>${esc(a.label)}</span>
+          </button>`).join('')}
+      </div>
+
+      <button type="button" class="enter-undertale" data-action="enter-undertale">
+        <span class="ut-heart" aria-hidden="true">❤</span> ENTRAR AL UNDERGROUND
+      </button>
+    </section>`;
+}
+
+function renderFotos(d) {
+  return `
+    <section class="panel panel--split-media" aria-label="Galería de fotos">
+      ${panelHeader('bi-images','Fotos','Momentos que cuentan')}
+      <div class="carousel" data-carousel>
+        <button type="button" class="carousel-btn" data-action="carousel-prev" aria-label="Foto anterior">‹</button>
+        <img class="carousel-img" src="${esc(d.fotos[0].src)}" alt="${esc(d.fotos[0].alt)}" data-fallback="${esc(FALLBACK_AVATAR)}" />
+        <button type="button" class="carousel-btn" data-action="carousel-next" aria-label="Foto siguiente">›</button>
+        <div class="carousel-dots" role="group" aria-label="Seleccionar fotografía">
+          ${d.fotos.map((f, i) => `<button type="button" class="dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Ver foto ${i + 1}: ${esc(f.title)}"></button>`).join('')}
+        </div>
+      </div>
+      <article class="card" id="fotosInfo">
+        <h3>${esc(d.fotos[0].title)}</h3>
+        <p>${esc(d.fotos[0].sub)}</p>
+      </article>
+    </section>`;
+}
+
+function renderAgenda(d) {
+  const days = ['lun','mar','mie','jue','vie','sab','dom'];
+  const labels = { lun:'Lunes', mar:'Martes', mie:'Miércoles', jue:'Jueves', vie:'Viernes', sab:'Sábado', dom:'Domingo' };
+  return `
+    <section class="panel panel--agenda" aria-label="Agenda semanal">
+      ${panelHeader('bi-calendar3','Agenda','Organización semanal')}
+      <div class="day-pills" role="group" aria-label="Filtrar actividades por día">
+        ${days.map(day => `<button type="button" class="day-pill ${day === 'lun' ? 'active' : ''}" data-day="${day}" aria-pressed="${day === 'lun'}">${labels[day]}</button>`).join('')}
+      </div>
+      <div id="agendaList" class="agenda-list">
+        ${d.actividades.filter(a => a.day === 'lun').map(a => `
+          <article class="agenda-item">
+            <strong>${esc(a.time)}</strong>
+            <h4>${esc(a.title)}</h4>
+            <p>${esc(a.desc)}</p>
+          </article>`).join('')}
+      </div>
+    </section>`;
+}
+
+function renderFrases(d) {
+  return `
+    <section class="panel panel--split-media" aria-label="Frases motivacionales">
+      ${panelHeader('bi-quote','Frases','Inspiración diaria')}
+      <div class="carousel" data-carousel>
+        <button type="button" class="carousel-btn" data-action="carousel-prev" aria-label="Frase anterior">‹</button>
+        <img class="carousel-img" src="${esc(d.frases[0].src)}" alt="${esc(d.frases[0].alt)}" data-fallback="${esc(FALLBACK_CARD)}" />
+        <button type="button" class="carousel-btn" data-action="carousel-next" aria-label="Frase siguiente">›</button>
+        <div class="carousel-dots" role="group" aria-label="Seleccionar frase">
+          ${d.frases.map((f, i) => `<button type="button" class="dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Ver frase ${i + 1}: ${esc(f.title)}"></button>`).join('')}
+        </div>
+      </div>
+      <article class="card" id="frasesInfo">
+        <h3>${esc(d.frases[0].title)}</h3>
+        <p>${esc(d.frases[0].desc)}</p>
+      </article>
+    </section>`;
+}
+
+function renderRedes(d) {
+  return `
+    <section class="panel panel--redes" aria-label="Redes sociales y formulario de contacto">
+      ${panelHeader('bi-share-fill','Redes','Conecta conmigo')}
+      <div class="social-grid">
+        ${d.social.map(s => `
+          <a class="social-block" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" style="--brand:${esc(s.color)}" aria-label="Visitar ${esc(s.label)} de Aler">
+            <i class="bi ${esc(s.icon)}" aria-hidden="true"></i>
+            <span>${esc(s.label)}</span>
+          </a>`).join('')}
+      </div>
+      <form class="contact-form" id="contactForm">
+        <div class="form-field">
+          <label for="contactoNombre">Nombre</label>
+          <input type="text" id="contactoNombre" name="nombre" placeholder="Tu nombre" required />
+        </div>
+        <div class="form-field">
+          <label for="contactoEmail">Correo electrónico</label>
+          <input type="email" id="contactoEmail" name="email" placeholder="tu@correo.com" required />
+        </div>
+        <div class="form-field form-field--full">
+          <label for="contactoMensaje">Mensaje</label>
+          <textarea id="contactoMensaje" name="mensaje" rows="4" placeholder="Escribe tu mensaje aquí..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Enviar mensaje</button>
+      </form>
+    </section>`;
+}
+
+function renderUndertale(d) {
+  return `
+    <section class="panel panel--undertale" aria-label="Sección Underground de gustos personales">
+      ${panelHeader('bi-heart-fill','Underground','El mundo de Aler')}
+      <div class="ut-dialog">
+        <div class="ut-sprite">
+          <img src="${esc(d.dialogo.sprite)}" alt="Sprite animado de Sans saludando" data-fallback="${esc(d.dialogo.fallbackSprite)}" data-fallback-text="${esc(d.dialogo.fallbackEmoji)}" />
+        </div>
+        <button type="button" class="ut-text-box" id="utDialogBox" aria-label="Avanzar diálogo de Sans">
+          <div class="ut-speaker">* ${esc(d.dialogo.speaker)}</div>
+          <div class="ut-text" id="utText">${esc(d.dialogo.lineas[0])}</div>
+          <span class="ut-arrow" aria-hidden="true">▼</span>
+        </button>
+      </div>
+
+      <div class="ut-accordion-group">
+        <div class="ut-category-tabs" role="tablist" aria-label="Categorías de intereses">
+          <button type="button" role="tab" aria-selected="true" class="ut-category-tab active" data-target="animes">ANIMES <span aria-hidden="true">▼</span></button>
+          <button type="button" role="tab" aria-selected="false" class="ut-category-tab" data-target="juegos">JUEGOS <span aria-hidden="true">▼</span></button>
+          <button type="button" role="tab" aria-selected="false" class="ut-category-tab" data-target="pasatiempos">PASATIEMPOS <span aria-hidden="true">▼</span></button>
+        </div>
+
+        <div class="ut-category-panels">
+          <div class="ut-category-panel active" id="panel-animes" role="tabpanel">
+            ${d.animes.map(item => `
+              <article class="ut-card">
+                <div class="ut-sprite">${renderSprite(item)}</div>
+                <div><h3>${esc(item.title)}</h3><p>${esc(item.desc)}</p></div>
+              </article>`).join('')}
+          </div>
+
+          <div class="ut-category-panel" id="panel-juegos" role="tabpanel" hidden>
+            ${d.juegos.map(item => `
+              <article class="ut-card">
+                <div class="ut-sprite">${renderSprite(item)}</div>
+                <div><h3>${esc(item.title)}</h3><p>${esc(item.desc)}</p></div>
+              </article>`).join('')}
+          </div>
+
+          <div class="ut-category-panel" id="panel-pasatiempos" role="tabpanel" hidden>
+            ${d.pasatiempos.map(item => `
+              <article class="ut-card">
+                <div class="ut-sprite">${renderSprite(item)}</div>
+                <div><h3>${esc(item.title)}</h3><p>${esc(item.desc)}</p></div>
+              </article>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="ut-exit" data-action="navigate" data-panel="principal">SALIR DEL UNDERGROUND</button>
+    </section>`;
+}
+
+function setupInteractivity(panel) {
+  const dialogBox = $('#utDialogBox');
+  if (dialogBox) {
+    let lineIdx = 0;
+    const lines = DATA.undertale.dialogo.lineas;
+    const textEl = $('#utText');
+    dialogBox.addEventListener('click', () => {
+      lineIdx = (lineIdx + 1) % lines.length;
+      if (textEl) textEl.textContent = lines[lineIdx];
+    });
+  }
+
+  const tabs = $$('.ut-category-tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      const target = tab.dataset.target;
+      $$('.ut-category-panel').forEach(p => {
+        const match = p.id === `panel-${target}`;
+        p.classList.toggle('active', match);
+        p.hidden = !match;
+      });
+    });
+  });
+
+  const carousel = $('[data-carousel]');
+  if (carousel) {
+    let idx = 0;
+    const img = carousel.querySelector('.carousel-img');
+    const dots = carousel.querySelectorAll('.dot');
+    const items = DATA[panel][panel];
+    const info = $(`#${panel}Info`);
+
+    const update = (newIdx) => {
+      idx = (newIdx + items.length) % items.length;
+      delete img.dataset.fallbackUsed;
+      img.src = items[idx].src;
+      img.alt = items[idx].alt;
+      dots.forEach((dot, i) => dot.classList.toggle('active', i === idx));
+      if (info) {
+        info.querySelector('h3').textContent = items[idx].title;
+        info.querySelector('p').textContent = panel === 'fotos' ? items[idx].sub : items[idx].desc;
+      }
+    };
+
+    carousel.querySelector('[data-action="carousel-prev"]').addEventListener('click', () => update(idx - 1));
+    carousel.querySelector('[data-action="carousel-next"]').addEventListener('click', () => update(idx + 1));
+    dots.forEach((dot, i) => dot.addEventListener('click', () => update(i)));
+  }
+
+  const dayPills = $$('.day-pill');
+  if (dayPills.length) {
+    const agendaList = $('#agendaList');
+    dayPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        dayPills.forEach(p => {
+          p.classList.remove('active');
+          p.setAttribute('aria-pressed', 'false');
+        });
+        pill.classList.add('active');
+        pill.setAttribute('aria-pressed', 'true');
+        const filtered = DATA.agenda.actividades.filter(a => a.day === pill.dataset.day);
+        agendaList.innerHTML = filtered.map(a => `
+          <article class="agenda-item">
+            <strong>${esc(a.time)}</strong>
+            <h4>${esc(a.title)}</h4>
+            <p>${esc(a.desc)}</p>
+          </article>`).join('');
+      });
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  navigate(location.hash.slice(2) || 'principal', { replace: true });
+});
+
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-action]');
+  if (!target) return;
+  const action = target.dataset.action;
+
+  if (action === 'navigate') navigate(target.dataset.panel);
+  else if (action === 'enter-undertale') {
+    document.body.classList.add('entering-ut');
+    setTimeout(() => { document.body.classList.remove('entering-ut'); navigate('undertale'); }, 450);
+  }
+  else if (action === 'theme') toggleTheme();
+  else if (action === 'open-menu') toggleMenu(true);
+  else if (action === 'close-menu') toggleMenu(false);
+  else if (action === 'close-modal') $('#modal').hidden = true;
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    toggleMenu(false);
+    if (!$('#modal').hidden) $('#modal').hidden = true;
+  }
+});
+
+document.addEventListener('submit', (e) => {
+  if (e.target.id === 'contactForm') {
+    e.preventDefault();
+    toast('Mensaje enviado (simulado)', 'success');
+    e.target.reset();
+  }
+});
+
+backdrop.addEventListener('click', () => toggleMenu(false));
+$('#contactRailToggle')?.addEventListener('click', () => {
+  const isOpen = $('#contactRail').classList.toggle('open');
+  $('#contactRailToggle').setAttribute('aria-expanded', String(isOpen));
+  $('#contactRailToggle').textContent = isOpen ? '▶' : '◀';
+});
+</script>
+</body>
+</html>
